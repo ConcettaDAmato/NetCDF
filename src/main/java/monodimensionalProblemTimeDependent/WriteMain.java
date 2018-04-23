@@ -74,7 +74,7 @@ public class WriteMain {
 		try {
 			// Create new netcdf-3 file with the given filename
 			dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, filename);
-
+			dataFile.addGroupAttribute(null, new Attribute("PROVA GLOBAL ATTRIBUTE",""));
 			//add dimensions  where time dimension is unlimit
 			// in 1D case dimension are time and the depth
 			Dimension lvlDim = dataFile.addDimension(null, "depth", NLVL);
