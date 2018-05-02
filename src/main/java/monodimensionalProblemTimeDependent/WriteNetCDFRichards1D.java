@@ -70,6 +70,11 @@ public class WriteNetCDFRichards1D {
 	@In
 	@Unit ()
 	public double[] mySpatialCoordinate;
+	
+	@Description()
+	@In
+	@Unit ()
+	public double[] myDualSpatialCoordinate;
 
 	@Description()
 	@In
@@ -87,6 +92,7 @@ public class WriteNetCDFRichards1D {
 	public boolean doProcess;
 
 	int NLVL;
+	int dualNLVL;
 	int NREC;
 	// human readable date will be converted in unix format, the format will be an input and it has to be consistent with that used in OMS
 	DateFormat dateFormat;
@@ -108,6 +114,7 @@ public class WriteNetCDFRichards1D {
 			
 			
 			final int NLVL = mySpatialCoordinate.length;
+			final int dualNLVL = myDualSpatialCoordinate.length;
 			final int NREC = myVariables.keySet().size();
 			// human readable date will be converted in unix format, the format will be an input and it has to be consistent with that used in OMS
 			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -130,24 +137,33 @@ public class WriteNetCDFRichards1D {
 				//add dimensions  where time dimension is unlimit
 				// in 1D case dimension are time and the depth
 				Dimension lvlDim = dataFile.addDimension(null, "depth", NLVL);
+				Dimension dualLvlDim = dataFile.addDimension(null, "dualDepth", dualNLVL);
 				@SuppressWarnings("unused")
 				Dimension timeDim = dataFile.addUnlimitedDimension("time");
 
 				// Define the coordinate variables.
 				Variable depthVar = dataFile.addVariable(null, "depth", DataType.DOUBLE, "depth");
+				Variable dualDepthVar = dataFile.addVariable(null, "dual depth", DataType.DOUBLE, "dualDepth");
 				Variable timeVar = dataFile.addVariable(null, "time", DataType.INT, "time");
 
 				// Define units attributes for data variables.
 				dataFile.addVariableAttribute(depthVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(depthVar, new Attribute("long_name", "Soil depth"));
+				
+				dataFile.addVariableAttribute(dualDepthVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(dualDepthVar, new Attribute("long_name", "Dual soil depth"));
+				
 				dataFile.addVariableAttribute(timeVar, new Attribute("units","unix convention"));
 
 				// Define the netCDF variables for the psi and theta data.
 				String dims = "time depth";
+				String dualDims = "time dualDepth";
+
 
 				Variable psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
 				Variable iCVar = dataFile.addVariable(null, "psiIC", DataType.DOUBLE, "depth");
 				Variable waterHeightVar = dataFile.addVariable(null, "water heigth", DataType.DOUBLE, dims);
+				Variable velocitiesVar = dataFile.addVariable(null, "velocities", DataType.DOUBLE, dualDims);
 				Variable errorVar = dataFile.addVariable(null, "error", DataType.DOUBLE, "time");
 				Variable topBCVar = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
 				Variable bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
@@ -159,6 +175,8 @@ public class WriteNetCDFRichards1D {
 				dataFile.addVariableAttribute(iCVar, new Attribute("long_name", "Initial condition for hydraulic head"));
 				dataFile.addVariableAttribute(waterHeightVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(waterHeightVar, new Attribute("long_name", "water height"));
+				dataFile.addVariableAttribute(velocitiesVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(velocitiesVar, new Attribute("long_name", "Darcy velocities"));
 				dataFile.addVariableAttribute(errorVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(errorVar, new Attribute("long_name", "volume error at each time step"));
 				dataFile.addVariableAttribute(topBCVar, new Attribute("units", "mm"));
@@ -170,6 +188,8 @@ public class WriteNetCDFRichards1D {
 				// would have some real data to write for example, model output.
 				// times variable is filled later
 				ArrayDouble.D1 depths = new ArrayDouble.D1(lvlDim.getLength());
+				ArrayDouble.D1 dualDepths = new ArrayDouble.D1(dualLvlDim.getLength());
+
 				ArrayDouble.D1 dataPsiIC = new ArrayDouble.D1(lvlDim.getLength());
 				Array times = Array.factory(DataType.LONG, new int[] {NREC});
 
@@ -178,11 +198,16 @@ public class WriteNetCDFRichards1D {
 				for (z = 0; z < lvlDim.getLength(); z++) {
 					depths.set(z, mySpatialCoordinate[z]);
 				}
+				
+				for (z = 0; z < dualLvlDim.getLength(); z++) {
+					dualDepths.set(z, myDualSpatialCoordinate[z]);
+				}
 
 				// These data are those created by bufferWriter class. This will write our hydraulic head (psi) and
 				// adimensional water content (theta) data
 				ArrayDouble.D2 dataWaterHeight = new ArrayDouble.D2(NREC, lvlDim.getLength());
 				ArrayDouble.D2 dataPsi = new ArrayDouble.D2(NREC, lvlDim.getLength());
+				ArrayDouble.D2 dataVelocities = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
 				ArrayDouble.D1 dataError =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataTopBC =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataBottomBC =  new ArrayDouble.D1(NREC);
@@ -225,13 +250,20 @@ public class WriteNetCDFRichards1D {
 						dataPsiIC.set(lvl, myTempVariable[lvl]);
 
 					}
+					
+					myTempVariable =  entry.getValue().get(3);
+					for (int lvl = 0; lvl < dualNLVL; lvl++) {
+
+						dataVelocities.set(i,lvl, myTempVariable[lvl]);
+
+					}
 
 
-					dataError.set(i, entry.getValue().get(3)[0]);
+					dataError.set(i, entry.getValue().get(4)[0]);
 
-					dataTopBC.set(i, entry.getValue().get(4)[0]);
+					dataTopBC.set(i, entry.getValue().get(5)[0]);
 
-					dataBottomBC.set(i, entry.getValue().get(5)[0]);
+					dataBottomBC.set(i, entry.getValue().get(6)[0]);
 
 					i++;
 				}
@@ -244,10 +276,12 @@ public class WriteNetCDFRichards1D {
 				int[] origin = new int[2];
 
 				dataFile.write(depthVar, depths);
+				dataFile.write(dualDepthVar, dualDepths);
 				dataFile.write(timeVar, origin, times);
 				dataFile.write(psiVar, origin, dataPsi);
 				dataFile.write(waterHeightVar, origin, dataWaterHeight);
 				dataFile.write(iCVar, origin, dataPsiIC);
+				dataFile.write(velocitiesVar, origin, dataVelocities);
 				dataFile.write(errorVar, origin, dataError);
 				dataFile.write(topBCVar, origin, dataTopBC);
 				dataFile.write(bottomBCVar, origin, dataBottomBC);
