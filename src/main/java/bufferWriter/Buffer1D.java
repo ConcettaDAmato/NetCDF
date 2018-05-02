@@ -50,6 +50,11 @@ public class Buffer1D {
 	@Unit ("m")
 	public double[] inputSpatialCoordinate;
 	
+	@Description("Dual spatial coordinate: is the position of volumes' interfaces ")
+	@In 
+	@Unit ("m")
+	public double[] inputDualSpatialCoordinate;
+	
 	
 	@Description()
 	@Out
@@ -60,6 +65,11 @@ public class Buffer1D {
 	@Out
 	@Unit ()
 	public double[] mySpatialCoordinate;
+	
+	@Description()
+	@Out
+	@Unit ()
+	public double[] myDualSpatialCoordinate;
 	
 	@Description("")
 	int step=0;
@@ -74,6 +84,8 @@ public class Buffer1D {
 		if(step==0){
 			
 		mySpatialCoordinate = inputSpatialCoordinate;
+		myDualSpatialCoordinate = inputDualSpatialCoordinate;
+		
 		tempVariable = new ArrayList<double[]>();
 		//System.out.println(mySpatialCoordinate.toString());
 		
@@ -86,7 +98,8 @@ public class Buffer1D {
 		tempVariable.add(inputVariable.get(3).clone());
 		tempVariable.add(inputVariable.get(4).clone());
 		tempVariable.add(inputVariable.get(5).clone());
-		
+		tempVariable.add(inputVariable.get(6).clone());
+
 		myVariable.put(inputDate,(ArrayList<double[]>) tempVariable.clone());
 		//System.out.println(myVariable.size() +"       "+ myVariable.keySet());
 		//System.out.println(myVariable.toString());
