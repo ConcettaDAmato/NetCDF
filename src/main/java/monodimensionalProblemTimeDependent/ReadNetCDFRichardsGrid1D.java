@@ -28,6 +28,7 @@ import oms3.annotations.In;
 import oms3.annotations.Keywords;
 import oms3.annotations.License;
 import oms3.annotations.Out;
+import oms3.annotations.Unit;
 import ucar.ma2.ArrayDouble;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.NetcdfFile;
@@ -55,43 +56,78 @@ public class ReadNetCDFRichardsGrid1D {
 
 	@Description("eta coordinate of volume centroids: zero is at soil surface and and positive upward")
 	@Out
+	@Unit("m")
 	public double[] eta;
 
 	@Description("eta coordinate of volume interfaces: zero is at soil surface and and positive upward.")
 	@Out
+	@Unit("m")
 	public double[] etaDual;
 
 	@Description("z coordinate  of volume centroids: zero is at the bottom of the column and and positive upward")
 	@Out
+	@Unit("m")
 	public double[] z;
 
 	@Description("z coordinate of volume interfaces: zero is at soil surface and and positive upward.")
 	@Out
+	@Unit("m")
 	public double[] zDual;
 
 	@Description("Initial condition for water suction")
 	@Out
+	@Unit("m")
 	public double[] psiIC;
 	
 	@Description("Distance between consecutive controids, is used to compute gradients")
 	@Out
+	@Unit("m")
 	public double[] spaceDelta;
 	
 	@Description("Length of each control volume")
 	@Out
+	@Unit("m")
 	public double[] deltaZ;
 	
 	@Description("Adimensional water content at saturation")
 	@Out
+	@Unit("-")
 	public double[] thetaS;
 	
 	@Description("Adimensional residual water content")
 	@Out
+	@Unit("-")
 	public double[] thetaR;
 	
 	@Description("Hydraulic conductivity at saturation")
 	@Out
+	@Unit("m/s")
 	public double[] Ks;
+	
+	@Description("First SWRC parameter")
+	@Out
+	@Unit(" ")
+	public double[] par1SWRC;
+	
+	@Description("Second SWRC parameter")
+	@Out
+	@Unit(" ")
+	public double[] par2SWRC;
+	
+	@Description("Third SWRC parameter")
+	@Out
+	@Unit(" ")
+	public double[] par3SWRC;
+	
+	@Description("Fouth SWRC parameter")
+	@Out
+	@Unit(" ")
+	public double[] par4SWRC;
+	
+	@Description("Coefficient to model ET: -et(theta-thetaR). Casulli notes")
+	@Out
+	@Unit("1/s")
+	public double[] et;
 
 
 	int[] size;
@@ -119,6 +155,11 @@ public class ReadNetCDFRichardsGrid1D {
 			Variable dataThetaS = dataFile.findVariable("thetaS");
 			Variable dataThetaR = dataFile.findVariable("thetaR");
 			Variable dataKs = dataFile.findVariable("Ks");
+			Variable dataPar1SWRC = dataFile.findVariable("par1SWRC");
+			Variable dataPar2SWRC = dataFile.findVariable("par2SWRC");
+			Variable dataPar3SWRC = dataFile.findVariable("par3SWRC");
+			Variable dataPar4SWRC = dataFile.findVariable("par4SWRC");
+			Variable dataEt = dataFile.findVariable("et");
 
 
 
@@ -174,17 +215,32 @@ public class ReadNetCDFRichardsGrid1D {
 			thetaS     = new double[size[0]];
 			thetaR     = new double[size[0]];
 			Ks         = new double[size[0]];
+			par1SWRC   = new double[size[0]];
+			par2SWRC   = new double[size[0]];
+			par3SWRC   = new double[size[0]];
+			par4SWRC   = new double[size[0]];
+			et         = new double[size[0]];
 
 			ArrayDouble.D1 dataArrayDeltaZ;
 			ArrayDouble.D1 dataArrayThetaS;
 			ArrayDouble.D1 dataArrayThetaR;
 			ArrayDouble.D1 dataArrayKs;
+			ArrayDouble.D1 dataArrayPar1SWRC;
+			ArrayDouble.D1 dataArrayPar2SWRC;
+			ArrayDouble.D1 dataArrayPar3SWRC;
+			ArrayDouble.D1 dataArrayPar4SWRC;
+			ArrayDouble.D1 dataArrayEt;
 
 
 			dataArrayDeltaZ     = (ArrayDouble.D1) dataDeltaZ.read(null,size);
 			dataArrayThetaS     = (ArrayDouble.D1) dataThetaS.read(null,size);
 			dataArrayThetaR     = (ArrayDouble.D1) dataThetaR.read(null,size);
 			dataArrayKs         = (ArrayDouble.D1) dataKs.read(null,size);
+			dataArrayPar1SWRC   = (ArrayDouble.D1) dataPar1SWRC.read(null,size);
+			dataArrayPar2SWRC   = (ArrayDouble.D1) dataPar2SWRC.read(null,size);
+			dataArrayPar3SWRC   = (ArrayDouble.D1) dataPar3SWRC.read(null,size);
+			dataArrayPar4SWRC   = (ArrayDouble.D1) dataPar4SWRC.read(null,size);
+			dataArrayEt         = (ArrayDouble.D1) dataEt.read(null,size);
 
 
 			for (int i = 0; i < size[0]; i++) {
@@ -194,6 +250,11 @@ public class ReadNetCDFRichardsGrid1D {
 				thetaS[i]     = dataArrayThetaS.get(i);
 				thetaR[i]     = dataArrayThetaR.get(i);
 				Ks[i]         = dataArrayKs.get(i);
+				par1SWRC[i]   = dataArrayPar1SWRC.get(i);  
+				par2SWRC[i]   = dataArrayPar2SWRC.get(i);
+				par3SWRC[i]   = dataArrayPar3SWRC.get(i);
+				par4SWRC[i]   = dataArrayPar4SWRC.get(i);
+				et[i]         = dataArrayEt.get(i);
 
 
 			}
