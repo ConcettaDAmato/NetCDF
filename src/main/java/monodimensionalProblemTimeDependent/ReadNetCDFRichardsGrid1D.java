@@ -177,30 +177,35 @@ public class ReadNetCDFRichardsGrid1D {
 			zDual   = new double[size[0]];
 			psiIC   = new double[size[0]];
 			spaceDelta = new double[size[0]];
-
+			et         = new double[size[0]];
+			
+			
 			ArrayDouble.D1 dataArrayEta;
 			ArrayDouble.D1 dataArrayEtaDual;
 			ArrayDouble.D1 dataArrayZ;
 			ArrayDouble.D1 dataArrayZDual;
 			ArrayDouble.D1 dataArrayPsiIC;
 			ArrayDouble.D1 dataArraySpaceDelta;
-
+			ArrayDouble.D1 dataArrayEt;
+			
 			dataArrayEta     = (ArrayDouble.D1) dataEta.read(null,size);
 			dataArrayEtaDual = (ArrayDouble.D1) dataEtaDual.read(null,size);
 			dataArrayZ       = (ArrayDouble.D1) dataZ.read(null,size);
 			dataArrayZDual   = (ArrayDouble.D1) dataZDual.read(null,size);
 			dataArrayPsiIC   = (ArrayDouble.D1) dataPsiIC.read(null,size);
 			dataArraySpaceDelta = (ArrayDouble.D1) dataSpaceDelta.read(null,size);
-
+			dataArrayEt         = (ArrayDouble.D1) dataEt.read(null,size);
+			
 			for (int i = 0; i < size[0]; i++) {
 
-
+			
 				eta[i]     = dataArrayEta.get(i);
 				etaDual[i] = dataArrayEtaDual.get(i);
 				z[i]       = dataArrayZ.get(i);
 				zDual[i]   = dataArrayZDual.get(i);
 				psiIC[i]   = dataArrayPsiIC.get(i);
 				spaceDelta[i] = dataArraySpaceDelta.get(i);
+				et[i]         = dataArrayEt.get(i);
 
 
 			}
@@ -219,7 +224,7 @@ public class ReadNetCDFRichardsGrid1D {
 			par2SWRC   = new double[size[0]];
 			par3SWRC   = new double[size[0]];
 			par4SWRC   = new double[size[0]];
-			et         = new double[size[0]];
+
 
 			ArrayDouble.D1 dataArrayDeltaZ;
 			ArrayDouble.D1 dataArrayThetaS;
@@ -229,7 +234,6 @@ public class ReadNetCDFRichardsGrid1D {
 			ArrayDouble.D1 dataArrayPar2SWRC;
 			ArrayDouble.D1 dataArrayPar3SWRC;
 			ArrayDouble.D1 dataArrayPar4SWRC;
-			ArrayDouble.D1 dataArrayEt;
 
 
 			dataArrayDeltaZ     = (ArrayDouble.D1) dataDeltaZ.read(null,size);
@@ -240,12 +244,10 @@ public class ReadNetCDFRichardsGrid1D {
 			dataArrayPar2SWRC   = (ArrayDouble.D1) dataPar2SWRC.read(null,size);
 			dataArrayPar3SWRC   = (ArrayDouble.D1) dataPar3SWRC.read(null,size);
 			dataArrayPar4SWRC   = (ArrayDouble.D1) dataPar4SWRC.read(null,size);
-			dataArrayEt         = (ArrayDouble.D1) dataEt.read(null,size);
 
 
 			for (int i = 0; i < size[0]; i++) {
 
-				System.out.println(dataArrayDeltaZ.get(i));
 				deltaZ[i]     = dataArrayDeltaZ.get(i);
 				thetaS[i]     = dataArrayThetaS.get(i);
 				thetaR[i]     = dataArrayThetaR.get(i);
@@ -254,7 +256,6 @@ public class ReadNetCDFRichardsGrid1D {
 				par2SWRC[i]   = dataArrayPar2SWRC.get(i);
 				par3SWRC[i]   = dataArrayPar3SWRC.get(i);
 				par4SWRC[i]   = dataArrayPar4SWRC.get(i);
-				et[i]         = dataArrayEt.get(i);
 
 
 			}
