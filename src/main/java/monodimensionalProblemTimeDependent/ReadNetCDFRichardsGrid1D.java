@@ -38,7 +38,7 @@ import ucar.nc2.Variable;
 
 
 
-@Description("This class reads a NetCDF containing 1D grid data. The input file is created with a Jupyter Notebook")
+@Description("This class reads a NetCDF containing 1D grid data. The input file is created with RichardsMeshGen.ipynb (Jupyter Notebook)")
 @Documentation("")
 @Author(name = "Niccolo' Tubini, Riccardo Rigon", contact = "tubini.niccolo@gmail.com")
 @Keywords("Hydrology, Richards, Infiltration")
