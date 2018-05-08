@@ -25,6 +25,7 @@ import oms3.annotations.Description;
 import oms3.annotations.Documentation;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
+import oms3.annotations.Initialize;
 import oms3.annotations.Keywords;
 import oms3.annotations.License;
 import oms3.annotations.Out;
@@ -53,7 +54,7 @@ public class ReadNetCDFRichardsGrid1D {
 	@In
 	public String richardsGridFilename;
 
-
+	
 	@Description("eta coordinate of volume centroids: zero is at soil surface and and positive upward")
 	@Out
 	@Unit("m")
@@ -78,52 +79,52 @@ public class ReadNetCDFRichardsGrid1D {
 	@Out
 	@Unit("m")
 	public double[] psiIC;
-	
+
 	@Description("Distance between consecutive controids, is used to compute gradients")
 	@Out
 	@Unit("m")
 	public double[] spaceDelta;
-	
+
 	@Description("Length of each control volume")
 	@Out
 	@Unit("m")
 	public double[] deltaZ;
-	
+
 	@Description("Adimensional water content at saturation")
 	@Out
 	@Unit("-")
 	public double[] thetaS;
-	
+
 	@Description("Adimensional residual water content")
 	@Out
 	@Unit("-")
 	public double[] thetaR;
-	
+
 	@Description("Hydraulic conductivity at saturation")
 	@Out
 	@Unit("m/s")
 	public double[] Ks;
-	
+
 	@Description("First SWRC parameter")
 	@Out
 	@Unit(" ")
 	public double[] par1SWRC;
-	
+
 	@Description("Second SWRC parameter")
 	@Out
 	@Unit(" ")
 	public double[] par2SWRC;
-	
+
 	@Description("Third SWRC parameter")
 	@Out
 	@Unit(" ")
 	public double[] par3SWRC;
-	
+
 	@Description("Fouth SWRC parameter")
 	@Out
 	@Unit(" ")
 	public double[] par4SWRC;
-	
+
 	@Description("Coefficient to model ET: -et(theta-thetaR). Casulli notes")
 	@Out
 	@Unit("1/s")
@@ -131,157 +132,163 @@ public class ReadNetCDFRichardsGrid1D {
 
 
 	int[] size;
-
+	
+	int step=0;
+	
 	@Execute
 	public void read() throws IOException{
 
-		// Open the file. The ReadOnly parameter tells netCDF we want
-		// read-only access to the file.
-		NetcdfFile dataFile = null;
-		String filename = richardsGridFilename;
-		// Open the file.
-		try {
-
-			dataFile = NetcdfFile.open(filename, null);
-
-			// Retrieve the variables named "___"
-			Variable dataEta = dataFile.findVariable("eta");
-			Variable dataEtaDual = dataFile.findVariable("etaDual");
-			Variable dataZ = dataFile.findVariable("z");
-			Variable dataZDual = dataFile.findVariable("zDual");
-			Variable dataPsiIC = dataFile.findVariable("psiIC");
-			Variable dataSpaceDelta = dataFile.findVariable("spaceDelta");
-			Variable dataDeltaZ = dataFile.findVariable("deltaZ");
-			Variable dataThetaS = dataFile.findVariable("thetaS");
-			Variable dataThetaR = dataFile.findVariable("thetaR");
-			Variable dataKs = dataFile.findVariable("Ks");
-			Variable dataPar1SWRC = dataFile.findVariable("par1SWRC");
-			Variable dataPar2SWRC = dataFile.findVariable("par2SWRC");
-			Variable dataPar3SWRC = dataFile.findVariable("par3SWRC");
-			Variable dataPar4SWRC = dataFile.findVariable("par4SWRC");
-			Variable dataEt = dataFile.findVariable("et");
-
-
-
-			//if (dataEta == null) {
-			//	System.out.println("Cant find Variable data");
-			//	return;
-			//}
-
-
-			size = dataEta.getShape();
-
-			eta     = new double[size[0]];
-			etaDual = new double[size[0]];
-			z       = new double[size[0]];
-			zDual   = new double[size[0]];
-			psiIC   = new double[size[0]];
-			spaceDelta = new double[size[0]];
-			et         = new double[size[0]];
+		if(step==0){
 			
-			
-			ArrayDouble.D1 dataArrayEta;
-			ArrayDouble.D1 dataArrayEtaDual;
-			ArrayDouble.D1 dataArrayZ;
-			ArrayDouble.D1 dataArrayZDual;
-			ArrayDouble.D1 dataArrayPsiIC;
-			ArrayDouble.D1 dataArraySpaceDelta;
-			ArrayDouble.D1 dataArrayEt;
-			
-			dataArrayEta     = (ArrayDouble.D1) dataEta.read(null,size);
-			dataArrayEtaDual = (ArrayDouble.D1) dataEtaDual.read(null,size);
-			dataArrayZ       = (ArrayDouble.D1) dataZ.read(null,size);
-			dataArrayZDual   = (ArrayDouble.D1) dataZDual.read(null,size);
-			dataArrayPsiIC   = (ArrayDouble.D1) dataPsiIC.read(null,size);
-			dataArraySpaceDelta = (ArrayDouble.D1) dataSpaceDelta.read(null,size);
-			dataArrayEt         = (ArrayDouble.D1) dataEt.read(null,size);
-			
-			for (int i = 0; i < size[0]; i++) {
+			// Open the file. The ReadOnly parameter tells netCDF we want
+			// read-only access to the file.
+			NetcdfFile dataFile = null;
+			String filename = richardsGridFilename;
+			// Open the file.
+			try {
 
-			
-				eta[i]     = dataArrayEta.get(i);
-				etaDual[i] = dataArrayEtaDual.get(i);
-				z[i]       = dataArrayZ.get(i);
-				zDual[i]   = dataArrayZDual.get(i);
-				psiIC[i]   = dataArrayPsiIC.get(i);
-				spaceDelta[i] = dataArraySpaceDelta.get(i);
-				et[i]         = dataArrayEt.get(i);
+				dataFile = NetcdfFile.open(filename, null);
+
+				// Retrieve the variables named "___"
+				Variable dataEta = dataFile.findVariable("eta");
+				Variable dataEtaDual = dataFile.findVariable("etaDual");
+				Variable dataZ = dataFile.findVariable("z");
+				Variable dataZDual = dataFile.findVariable("zDual");
+				Variable dataPsiIC = dataFile.findVariable("psiIC");
+				Variable dataSpaceDelta = dataFile.findVariable("spaceDelta");
+				Variable dataDeltaZ = dataFile.findVariable("deltaZ");
+				Variable dataThetaS = dataFile.findVariable("thetaS");
+				Variable dataThetaR = dataFile.findVariable("thetaR");
+				Variable dataKs = dataFile.findVariable("Ks");
+				Variable dataPar1SWRC = dataFile.findVariable("par1SWRC");
+				Variable dataPar2SWRC = dataFile.findVariable("par2SWRC");
+				Variable dataPar3SWRC = dataFile.findVariable("par3SWRC");
+				Variable dataPar4SWRC = dataFile.findVariable("par4SWRC");
+				Variable dataEt = dataFile.findVariable("et");
 
 
-			}
 
-			//////////////////////////
-			//////////////////////////
-			//////////////////////////
-
-			size = dataDeltaZ.getShape();
-
-			deltaZ     = new double[size[0]];
-			thetaS     = new double[size[0]];
-			thetaR     = new double[size[0]];
-			Ks         = new double[size[0]];
-			par1SWRC   = new double[size[0]];
-			par2SWRC   = new double[size[0]];
-			par3SWRC   = new double[size[0]];
-			par4SWRC   = new double[size[0]];
+				//if (dataEta == null) {
+				//	System.out.println("Cant find Variable data");
+				//	return;
+				//}
 
 
-			ArrayDouble.D1 dataArrayDeltaZ;
-			ArrayDouble.D1 dataArrayThetaS;
-			ArrayDouble.D1 dataArrayThetaR;
-			ArrayDouble.D1 dataArrayKs;
-			ArrayDouble.D1 dataArrayPar1SWRC;
-			ArrayDouble.D1 dataArrayPar2SWRC;
-			ArrayDouble.D1 dataArrayPar3SWRC;
-			ArrayDouble.D1 dataArrayPar4SWRC;
+				size = dataEta.getShape();
+
+				eta     = new double[size[0]];
+				etaDual = new double[size[0]];
+				z       = new double[size[0]];
+				zDual   = new double[size[0]];
+				psiIC   = new double[size[0]];
+				spaceDelta = new double[size[0]];
+				et         = new double[size[0]];
 
 
-			dataArrayDeltaZ     = (ArrayDouble.D1) dataDeltaZ.read(null,size);
-			dataArrayThetaS     = (ArrayDouble.D1) dataThetaS.read(null,size);
-			dataArrayThetaR     = (ArrayDouble.D1) dataThetaR.read(null,size);
-			dataArrayKs         = (ArrayDouble.D1) dataKs.read(null,size);
-			dataArrayPar1SWRC   = (ArrayDouble.D1) dataPar1SWRC.read(null,size);
-			dataArrayPar2SWRC   = (ArrayDouble.D1) dataPar2SWRC.read(null,size);
-			dataArrayPar3SWRC   = (ArrayDouble.D1) dataPar3SWRC.read(null,size);
-			dataArrayPar4SWRC   = (ArrayDouble.D1) dataPar4SWRC.read(null,size);
+				ArrayDouble.D1 dataArrayEta;
+				ArrayDouble.D1 dataArrayEtaDual;
+				ArrayDouble.D1 dataArrayZ;
+				ArrayDouble.D1 dataArrayZDual;
+				ArrayDouble.D1 dataArrayPsiIC;
+				ArrayDouble.D1 dataArraySpaceDelta;
+				ArrayDouble.D1 dataArrayEt;
+
+				dataArrayEta     = (ArrayDouble.D1) dataEta.read(null,size);
+				dataArrayEtaDual = (ArrayDouble.D1) dataEtaDual.read(null,size);
+				dataArrayZ       = (ArrayDouble.D1) dataZ.read(null,size);
+				dataArrayZDual   = (ArrayDouble.D1) dataZDual.read(null,size);
+				dataArrayPsiIC   = (ArrayDouble.D1) dataPsiIC.read(null,size);
+				dataArraySpaceDelta = (ArrayDouble.D1) dataSpaceDelta.read(null,size);
+				dataArrayEt         = (ArrayDouble.D1) dataEt.read(null,size);
+
+				for (int i = 0; i < size[0]; i++) {
 
 
-			for (int i = 0; i < size[0]; i++) {
-
-				deltaZ[i]     = dataArrayDeltaZ.get(i);
-				thetaS[i]     = dataArrayThetaS.get(i);
-				thetaR[i]     = dataArrayThetaR.get(i);
-				Ks[i]         = dataArrayKs.get(i);
-				par1SWRC[i]   = dataArrayPar1SWRC.get(i);  
-				par2SWRC[i]   = dataArrayPar2SWRC.get(i);
-				par3SWRC[i]   = dataArrayPar3SWRC.get(i);
-				par4SWRC[i]   = dataArrayPar4SWRC.get(i);
+					eta[i]     = dataArrayEta.get(i);
+					etaDual[i] = dataArrayEtaDual.get(i);
+					z[i]       = dataArrayZ.get(i);
+					zDual[i]   = dataArrayZDual.get(i);
+					psiIC[i]   = dataArrayPsiIC.get(i);
+					spaceDelta[i] = dataArraySpaceDelta.get(i);
+					et[i]         = dataArrayEt.get(i);
 
 
-			}
-			/*
+				}
+
+				//////////////////////////
+				//////////////////////////
+				//////////////////////////
+
+				size = dataDeltaZ.getShape();
+
+				deltaZ     = new double[size[0]];
+				thetaS     = new double[size[0]];
+				thetaR     = new double[size[0]];
+				Ks         = new double[size[0]];
+				par1SWRC   = new double[size[0]];
+				par2SWRC   = new double[size[0]];
+				par3SWRC   = new double[size[0]];
+				par4SWRC   = new double[size[0]];
+
+
+				ArrayDouble.D1 dataArrayDeltaZ;
+				ArrayDouble.D1 dataArrayThetaS;
+				ArrayDouble.D1 dataArrayThetaR;
+				ArrayDouble.D1 dataArrayKs;
+				ArrayDouble.D1 dataArrayPar1SWRC;
+				ArrayDouble.D1 dataArrayPar2SWRC;
+				ArrayDouble.D1 dataArrayPar3SWRC;
+				ArrayDouble.D1 dataArrayPar4SWRC;
+
+
+				dataArrayDeltaZ     = (ArrayDouble.D1) dataDeltaZ.read(null,size);
+				dataArrayThetaS     = (ArrayDouble.D1) dataThetaS.read(null,size);
+				dataArrayThetaR     = (ArrayDouble.D1) dataThetaR.read(null,size);
+				dataArrayKs         = (ArrayDouble.D1) dataKs.read(null,size);
+				dataArrayPar1SWRC   = (ArrayDouble.D1) dataPar1SWRC.read(null,size);
+				dataArrayPar2SWRC   = (ArrayDouble.D1) dataPar2SWRC.read(null,size);
+				dataArrayPar3SWRC   = (ArrayDouble.D1) dataPar3SWRC.read(null,size);
+				dataArrayPar4SWRC   = (ArrayDouble.D1) dataPar4SWRC.read(null,size);
+
+
+				for (int i = 0; i < size[0]; i++) {
+
+					deltaZ[i]     = dataArrayDeltaZ.get(i);
+					thetaS[i]     = dataArrayThetaS.get(i);
+					thetaR[i]     = dataArrayThetaR.get(i);
+					Ks[i]         = dataArrayKs.get(i);
+					par1SWRC[i]   = dataArrayPar1SWRC.get(i);  
+					par2SWRC[i]   = dataArrayPar2SWRC.get(i);
+					par3SWRC[i]   = dataArrayPar3SWRC.get(i);
+					par4SWRC[i]   = dataArrayPar4SWRC.get(i);
+
+
+				}
+				/*
 			System.out.println("Check IC values:\n\n");
 			for (int i = 0; i < size[0]; i++) {
 
 				System.out.println("	"+psiIC[i]);
 
 			}
-			 */
+				 */
 
-		} catch (InvalidRangeException e) {
-			e.printStackTrace();
+			} catch (InvalidRangeException e) {
+				e.printStackTrace();
 
-		} finally {
-			if (dataFile != null)
-				try {
-					dataFile.close();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-				}
+			} finally {
+				if (dataFile != null)
+					try {
+						dataFile.close();
+					} catch (IOException ioe) {
+						ioe.printStackTrace();
+					}
+			}
+
+			System.out.println("*** SUCCESS reading example file " + richardsGridFilename);
+
 		}
-
-		System.out.println("*** SUCCESS reading example file " + richardsGridFilename);
-
+		step++;
 
 	}
 }
