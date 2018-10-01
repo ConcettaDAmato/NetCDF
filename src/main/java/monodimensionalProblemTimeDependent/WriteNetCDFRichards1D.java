@@ -167,12 +167,13 @@ public class WriteNetCDFRichards1D {
 				Variable errorVar = dataFile.addVariable(null, "error", DataType.DOUBLE, "time");
 				Variable topBCVar = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
 				Variable bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
+				Variable runOffVar = dataFile.addVariable(null, "runOff", DataType.DOUBLE, "time");
 
 				// Define units attributes for data variables.
 				dataFile.addVariableAttribute(psiVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(psiVar, new Attribute("long_name", "Hydraulic head"));
+				dataFile.addVariableAttribute(psiVar, new Attribute("long_name", "Water suction"));
 				dataFile.addVariableAttribute(iCVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(iCVar, new Attribute("long_name", "Initial condition for hydraulic head"));
+				dataFile.addVariableAttribute(iCVar, new Attribute("long_name", "Initial condition for water suction"));
 				dataFile.addVariableAttribute(waterHeightVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(waterHeightVar, new Attribute("long_name", "water height"));
 				dataFile.addVariableAttribute(velocitiesVar, new Attribute("units", "m/s"));
@@ -183,6 +184,8 @@ public class WriteNetCDFRichards1D {
 				dataFile.addVariableAttribute(topBCVar, new Attribute("long_name", "rainfall heights"));
 				dataFile.addVariableAttribute(bottomBCVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(bottomBCVar, new Attribute("long_name", "water suction"));
+				dataFile.addVariableAttribute(runOffVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(runOffVar, new Attribute("long_name", "run off"));
 
 				// These data are those created by bufferWriter class. If this wasn't an example program, we
 				// would have some real data to write for example, model output.
@@ -211,6 +214,7 @@ public class WriteNetCDFRichards1D {
 				ArrayDouble.D1 dataError =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataTopBC =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataBottomBC =  new ArrayDouble.D1(NREC);
+				ArrayDouble.D1 dataRunOff =  new ArrayDouble.D1(NREC);
 
 				int i=0;
 				it = myVariables.entrySet().iterator();
@@ -264,6 +268,8 @@ public class WriteNetCDFRichards1D {
 					dataTopBC.set(i, entry.getValue().get(5)[0]);
 
 					dataBottomBC.set(i, entry.getValue().get(6)[0]);
+					
+					dataRunOff.set(i, entry.getValue().get(7)[0]);
 
 					i++;
 				}
@@ -285,6 +291,7 @@ public class WriteNetCDFRichards1D {
 				dataFile.write(errorVar, origin, dataError);
 				dataFile.write(topBCVar, origin, dataTopBC);
 				dataFile.write(bottomBCVar, origin, dataBottomBC);
+				dataFile.write(runOffVar, origin, dataRunOff);
 
 			} catch (IOException e) {
 				e.printStackTrace(System.err);
