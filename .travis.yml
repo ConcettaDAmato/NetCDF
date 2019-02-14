@@ -1,20 +1,20 @@
 language: java
 jdk:
-- oraclejdk8
+    - oraclejdk8
 before_cache:
-- rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
-- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+    - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+    - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-  - "$HOME/.gradle/caches/"
-  - "$HOME/.gradle/wrapper/"
+      - "$HOME/.gradle/caches/"
+      - "$HOME/.gradle/wrapper/"
 before_deploy:
-- export GRADLE_BUILD_DIR="build/libs"
-- export TAG=$(git describe --abbrev=0 --tags)
-- export MOD_TAG=${TAG#"v"}
-- export RELEASE_PKG_FILE="${GRADLE_BUILD_DIR}/TravisLesson-${MOD_TAG}.jar"
-- echo "deploying $RELEASE_PKG_FILE to GitHub releases"
-- gradle -PprojVersion=$MOD_TAG build
+    - export GRADLE_BUILD_DIR="build/libs"
+    - export TAG=$(git describe --abbrev=0 --tags)
+    - export MOD_TAG=${TAG#"v"}
+    - export RELEASE_PKG_FILE="${GRADLE_BUILD_DIR}/TravisLesson-${MOD_TAG}.jar"
+    - echo "deploying $RELEASE_PKG_FILE to GitHub releases"
+    - gradle -PprojVersion=$MOD_TAG build
 deploy:
   provider: releases
   file: "${RELEASE_PKG_FILE}"
@@ -23,6 +23,3 @@ deploy:
     tags: true
     all_branches: true
     repo: geoframecomponents/NetCDF
-env:
-  global:
-    secure: GGpoZR7rAq6vK6D9pbUKNdhn6/wbKtH9GxT7XnPVahjm8H090Hu8PM/8P2Azt7quXt60uoIToqEyujHIZpf2+9OI4Sd2mLt58lQTk4JhNUH3lYJec58M+SnG8KJMX/ElyJ4LzEr+fP9PpJ28IcYKq2y5HBFYadN5ViE2LvtC37bUiO9kTvPZFqnlutU283XRn/rXNGfh0PqRjqN4cf1KPi3KEdsuSF8I+lz1pQGS0lLXp7XyxlkbVDRFfh0Ci6zeKNMEXd5z8zo5TJW33PUw2zdg1Pi2iVxzT6+buXAEIsTJrNj2a2/DJBASBr60lUZ66MTRlrQLAmQH0sCU1DAzfVM2fyN35nEiqHhTj4N8imvg70VnvPZJMgdoRz0CVpY37nWNfxjGRLr3ztoTmVhMZ23cn+EbR+e2/M3WS1OhP+E/8cHV1fC/AJvYH/Uz0iUBTIpWxGzKozBWzzu/9lJp9mqFGnp9x8HDs7V4WvbD+Hk5fV014gFr87ZAMYdCX1Oar/lat5lvQMTd7+WHjeIXv6RvlKaZqQy+kcjkjAfjW/3Il/MTRCZ48u1nD478rER16UU3oCBzYZcAMQSqDcfdZi9ryu6Qf68H1y75I1kuXNR8WijwJCSnZmeNBHJuga/z30KdnIH6OrN9X/flh5K3qOuvcNPhffW4pu+eEUFvmtE=
