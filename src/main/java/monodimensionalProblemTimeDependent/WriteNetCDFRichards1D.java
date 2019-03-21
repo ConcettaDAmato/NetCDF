@@ -1,7 +1,7 @@
 /*
  * GNU GPL v3 License
  *
- * Copyright 2016 Marialaura Bancheri
+ * Copyright 2018 Niccolo` Tubini
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,8 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.Variable;
 
-@Description("This class writes a NetCDF with Richards' equation outputs. Before writing, outputs are stored in a buffer writer and as simulation is ended they are written in a NetCDF file.")
+@Description("This class writes a NetCDF with Richards' equation outputs. Before writing, outputs are stored in a buffer writer"
+		+ " and as simulation is ended they are written in a NetCDF file.")
 @Documentation("")
 @Author(name = "Niccolo' Tubini, Francesco Serafin, Riccardo Rigon", contact = "tubini.niccolo@gmail.com")
 @Keywords("Hydrology, Richards, Infiltration")
@@ -164,6 +165,9 @@ public class WriteNetCDFRichards1D {
 				Variable iCVar = dataFile.addVariable(null, "psiIC", DataType.DOUBLE, "depth");
 				Variable waterHeightVar = dataFile.addVariable(null, "water heigth", DataType.DOUBLE, dims);
 				Variable velocitiesVar = dataFile.addVariable(null, "velocities", DataType.DOUBLE, dualDims);
+				Variable velocitiesCapillaryVar = dataFile.addVariable(null, "velocitiesCapillary", DataType.DOUBLE, dualDims);
+				Variable velocitiesGravitationalVar = dataFile.addVariable(null, "velocitiesGravitational", DataType.DOUBLE, dualDims);
+				Variable pecletVar = dataFile.addVariable(null, "peclet", DataType.DOUBLE, dualDims);
 				Variable errorVar = dataFile.addVariable(null, "error", DataType.DOUBLE, "time");
 				Variable topBCVar = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
 				Variable bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
@@ -178,6 +182,12 @@ public class WriteNetCDFRichards1D {
 				dataFile.addVariableAttribute(waterHeightVar, new Attribute("long_name", "water height"));
 				dataFile.addVariableAttribute(velocitiesVar, new Attribute("units", "m/s"));
 				dataFile.addVariableAttribute(velocitiesVar, new Attribute("long_name", "Darcy velocities"));
+				dataFile.addVariableAttribute(velocitiesCapillaryVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(velocitiesCapillaryVar, new Attribute("long_name", "Capillary velocities"));
+				dataFile.addVariableAttribute(velocitiesGravitationalVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(velocitiesGravitationalVar, new Attribute("long_name", "Gravitational velocities"));
+				dataFile.addVariableAttribute(pecletVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(pecletVar, new Attribute("long_name", "Peclet number"));
 				dataFile.addVariableAttribute(errorVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(errorVar, new Attribute("long_name", "volume error at each time step"));
 				dataFile.addVariableAttribute(topBCVar, new Attribute("units", "mm"));
@@ -211,6 +221,9 @@ public class WriteNetCDFRichards1D {
 				ArrayDouble.D2 dataWaterHeight = new ArrayDouble.D2(NREC, lvlDim.getLength());
 				ArrayDouble.D2 dataPsi = new ArrayDouble.D2(NREC, lvlDim.getLength());
 				ArrayDouble.D2 dataVelocities = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataVelocitiesCapillary = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataVelocitiesGravitational = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataPeclet = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
 				ArrayDouble.D1 dataError =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataTopBC =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataBottomBC =  new ArrayDouble.D1(NREC);
@@ -261,15 +274,35 @@ public class WriteNetCDFRichards1D {
 						dataVelocities.set(i,lvl, myTempVariable[lvl]);
 
 					}
-
-
-					dataError.set(i, entry.getValue().get(4)[0]);
-
-					dataTopBC.set(i, entry.getValue().get(5)[0]);
-
-					dataBottomBC.set(i, entry.getValue().get(6)[0]);
 					
-					dataRunOff.set(i, entry.getValue().get(7)[0]);
+					myTempVariable =  entry.getValue().get(4);
+					for (int lvl = 0; lvl < dualNLVL; lvl++) {
+
+						dataVelocitiesCapillary.set(i,lvl, myTempVariable[lvl]);
+
+					}
+					
+					myTempVariable =  entry.getValue().get(5);
+					for (int lvl = 0; lvl < dualNLVL; lvl++) {
+
+						dataVelocitiesGravitational.set(i,lvl, myTempVariable[lvl]);
+
+					}
+
+					myTempVariable =  entry.getValue().get(6);
+					for (int lvl = 0; lvl < dualNLVL; lvl++) {
+
+						dataPeclet.set(i,lvl, myTempVariable[lvl]);
+
+					}
+
+					dataError.set(i, entry.getValue().get(7)[0]);
+
+					dataTopBC.set(i, entry.getValue().get(8)[0]);
+
+					dataBottomBC.set(i, entry.getValue().get(9)[0]);
+					
+					dataRunOff.set(i, entry.getValue().get(10)[0]);
 
 					i++;
 				}
@@ -288,6 +321,9 @@ public class WriteNetCDFRichards1D {
 				dataFile.write(waterHeightVar, origin, dataWaterHeight);
 				dataFile.write(iCVar, origin, dataPsiIC);
 				dataFile.write(velocitiesVar, origin, dataVelocities);
+				dataFile.write(velocitiesCapillaryVar, origin, dataVelocitiesCapillary);
+				dataFile.write(velocitiesGravitationalVar, origin, dataVelocitiesGravitational);
+				dataFile.write(pecletVar, origin, dataPeclet);
 				dataFile.write(errorVar, origin, dataError);
 				dataFile.write(topBCVar, origin, dataTopBC);
 				dataFile.write(bottomBCVar, origin, dataBottomBC);
@@ -308,7 +344,7 @@ public class WriteNetCDFRichards1D {
 					}
 			}
 
-			System.out.println("*** SUCCESS writing output file, " + fileName);
+			System.out.println("*** SUCCESS writing Richards' 1D output file, " + fileName);
 
 
 		}

@@ -100,20 +100,29 @@ public class RichardsBuffer1D {
 		// psiIC
 		tempVariable.add(inputVariable.get(2).clone());
 		
-		// waterVelocities
+		// water Velocities
 		tempVariable.add(inputVariable.get(3).clone());
 		
-		// errorVolume
+		// capillary velocities
 		tempVariable.add(inputVariable.get(4).clone());
 		
-		// top boundary condition value
+		// gravitational velocities
 		tempVariable.add(inputVariable.get(5).clone());
 		
-		// bottom boundary condition value
+		// peclet
 		tempVariable.add(inputVariable.get(6).clone());
 		
-		// surface run-off
+		// errorVolume
 		tempVariable.add(inputVariable.get(7).clone());
+		
+		// top boundary condition value
+		tempVariable.add(inputVariable.get(8).clone());
+		
+		// bottom boundary condition value
+		tempVariable.add(inputVariable.get(9).clone());
+		
+		// surface run-off
+		tempVariable.add(inputVariable.get(10).clone());
 
 		myVariable.put(inputDate,(ArrayList<double[]>) tempVariable.clone());
 		//System.out.println(myVariable.size() +"       "+ myVariable.keySet());
