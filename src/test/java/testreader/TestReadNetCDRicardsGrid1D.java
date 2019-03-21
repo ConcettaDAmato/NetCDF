@@ -18,14 +18,7 @@ package testreader;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-import java.net.URISyntaxException;
-import java.util.*;
-
-import bufferWriter.Buffer1D;
 import monodimensionalProblemTimeDependent.ReadNetCDFRichardsGrid1D;
-//import writeNetCDF.WriteNetCDFRichards1D;
-import monodimensionalProblemTimeDependent.WriteNetCDFRichards1D;
 
 import org.junit.Test;
 
