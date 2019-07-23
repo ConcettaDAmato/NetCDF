@@ -100,29 +100,32 @@ public class EnergyBuffer1D {
 		// temperature initial condition
 		tempVariable.add(inputVariable.get(2).clone());
 		
-		// diffusion fluxes
+		// energy fluxes
 		tempVariable.add(inputVariable.get(3).clone());
 		
-		// advection fluxes
+		// diffusion fluxes
 		tempVariable.add(inputVariable.get(4).clone());
 		
-		// Peclet number
+		// advection fluxes
 		tempVariable.add(inputVariable.get(5).clone());
 		
-		// error energy
+		// Peclet number
 		tempVariable.add(inputVariable.get(6).clone());
 		
-		// top boundary condition for temperature
+		// error energy
 		tempVariable.add(inputVariable.get(7).clone());
+		
+		// air temperature
+		tempVariable.add(inputVariable.get(8).clone());
 
 		// short wave radiation
-		tempVariable.add(inputVariable.get(8).clone());
-		
-		// wind velocity
 		tempVariable.add(inputVariable.get(9).clone());
 		
-		// bottom boundary condition for temperature
+		// wind velocity
 		tempVariable.add(inputVariable.get(10).clone());
+		
+		// bottom boundary condition for temperature
+		tempVariable.add(inputVariable.get(11).clone());
 		
 		myVariable.put(inputDate,(ArrayList<double[]>) tempVariable.clone());
 		//System.out.println(myVariable.size() +"       "+ myVariable.keySet());

@@ -164,10 +164,12 @@ public class WriteNetCDFRichards1D {
 				Variable psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
 				Variable iCVar = dataFile.addVariable(null, "psiIC", DataType.DOUBLE, "depth");
 				Variable waterHeightVar = dataFile.addVariable(null, "water heigth", DataType.DOUBLE, dims);
-				Variable velocitiesVar = dataFile.addVariable(null, "velocities", DataType.DOUBLE, dualDims);
-				Variable velocitiesCapillaryVar = dataFile.addVariable(null, "velocitiesCapillary", DataType.DOUBLE, dualDims);
-				Variable velocitiesGravitationalVar = dataFile.addVariable(null, "velocitiesGravitational", DataType.DOUBLE, dualDims);
-				Variable pecletVar = dataFile.addVariable(null, "peclet", DataType.DOUBLE, dualDims);
+				Variable darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocities", DataType.DOUBLE, dualDims);
+				Variable darcyVelocitiesCapillaryVar = dataFile.addVariable(null, "darcyVelocitiesCapillary", DataType.DOUBLE, dualDims);
+				Variable darcyVelocitiesGravityVar = dataFile.addVariable(null, "darcyVelocitiesGravity", DataType.DOUBLE, dualDims);
+				Variable poreVelocitiesVar = dataFile.addVariable(null, "poreVelocities", DataType.DOUBLE, dualDims);
+				Variable celerityVar = dataFile.addVariable(null, "celerities", DataType.DOUBLE, dualDims);
+				Variable kinematicRatioVar = dataFile.addVariable(null, "kinematicRatio", DataType.DOUBLE, dualDims);
 				Variable errorVar = dataFile.addVariable(null, "error", DataType.DOUBLE, "time");
 				Variable topBCVar = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
 				Variable bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
@@ -180,14 +182,18 @@ public class WriteNetCDFRichards1D {
 				dataFile.addVariableAttribute(iCVar, new Attribute("long_name", "Initial condition for water suction"));
 				dataFile.addVariableAttribute(waterHeightVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(waterHeightVar, new Attribute("long_name", "water height"));
-				dataFile.addVariableAttribute(velocitiesVar, new Attribute("units", "m/s"));
-				dataFile.addVariableAttribute(velocitiesVar, new Attribute("long_name", "Darcy velocities"));
-				dataFile.addVariableAttribute(velocitiesCapillaryVar, new Attribute("units", "m/s"));
-				dataFile.addVariableAttribute(velocitiesCapillaryVar, new Attribute("long_name", "Capillary velocities"));
-				dataFile.addVariableAttribute(velocitiesGravitationalVar, new Attribute("units", "m/s"));
-				dataFile.addVariableAttribute(velocitiesGravitationalVar, new Attribute("long_name", "Gravitational velocities"));
-				dataFile.addVariableAttribute(pecletVar, new Attribute("units", "-"));
-				dataFile.addVariableAttribute(pecletVar, new Attribute("long_name", "Peclet number"));
+				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("long_name", "Darcy velocities"));
+				dataFile.addVariableAttribute(darcyVelocitiesCapillaryVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(darcyVelocitiesCapillaryVar, new Attribute("long_name", "Darcy velocities due to the gradient of capillary forces "));
+				dataFile.addVariableAttribute(darcyVelocitiesGravityVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(darcyVelocitiesGravityVar, new Attribute("long_name", "Darcy velocities due to the gradient of gravity"));
+				dataFile.addVariableAttribute(poreVelocitiesVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(poreVelocitiesVar, new Attribute("long_name", "Pore velocities, ratio between the Darcy velocities and porosity"));
+				dataFile.addVariableAttribute(celerityVar, new Attribute("units", "m/s"));
+				dataFile.addVariableAttribute(celerityVar, new Attribute("long_name", "Celerity of the pressure wave (Rasmussen et al. 2000"));
+				dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("long_name", "Kinematic ratio (Rasmussen et al. 2000)"));
 				dataFile.addVariableAttribute(errorVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(errorVar, new Attribute("long_name", "volume error at each time step"));
 				dataFile.addVariableAttribute(topBCVar, new Attribute("units", "mm"));
@@ -220,10 +226,12 @@ public class WriteNetCDFRichards1D {
 				// adimensional water content (theta) data
 				ArrayDouble.D2 dataWaterHeight = new ArrayDouble.D2(NREC, lvlDim.getLength());
 				ArrayDouble.D2 dataPsi = new ArrayDouble.D2(NREC, lvlDim.getLength());
-				ArrayDouble.D2 dataVelocities = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
-				ArrayDouble.D2 dataVelocitiesCapillary = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
-				ArrayDouble.D2 dataVelocitiesGravitational = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
-				ArrayDouble.D2 dataPeclet = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataDarcyVelocities = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataDarcyVelocitiesCapillary = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataDarcyVelocitiesGravity = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataPoreVelocities = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataCelerity = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
+				ArrayDouble.D2 dataKinematicRatio = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
 				ArrayDouble.D1 dataError =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataTopBC =  new ArrayDouble.D1(NREC);
 				ArrayDouble.D1 dataBottomBC =  new ArrayDouble.D1(NREC);
@@ -271,38 +279,52 @@ public class WriteNetCDFRichards1D {
 					myTempVariable =  entry.getValue().get(3);
 					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 
-						dataVelocities.set(i,lvl, myTempVariable[lvl]);
+						dataDarcyVelocities.set(i,lvl, myTempVariable[lvl]);
 
 					}
 					
 					myTempVariable =  entry.getValue().get(4);
 					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 
-						dataVelocitiesCapillary.set(i,lvl, myTempVariable[lvl]);
+						dataDarcyVelocitiesCapillary.set(i,lvl, myTempVariable[lvl]);
 
 					}
 					
 					myTempVariable =  entry.getValue().get(5);
 					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 
-						dataVelocitiesGravitational.set(i,lvl, myTempVariable[lvl]);
+						dataDarcyVelocitiesGravity.set(i,lvl, myTempVariable[lvl]);
 
 					}
 
 					myTempVariable =  entry.getValue().get(6);
 					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 
-						dataPeclet.set(i,lvl, myTempVariable[lvl]);
+						dataPoreVelocities.set(i,lvl, myTempVariable[lvl]);
+
+					}
+					
+					myTempVariable =  entry.getValue().get(7);
+					for (int lvl = 0; lvl < dualNLVL; lvl++) {
+
+						dataCelerity.set(i,lvl, myTempVariable[lvl]);
+
+					}
+					
+					myTempVariable =  entry.getValue().get(8);
+					for (int lvl = 0; lvl < dualNLVL; lvl++) {
+
+						dataKinematicRatio.set(i,lvl, myTempVariable[lvl]);
 
 					}
 
-					dataError.set(i, entry.getValue().get(7)[0]);
+					dataError.set(i, entry.getValue().get(9)[0]);
 
-					dataTopBC.set(i, entry.getValue().get(8)[0]);
+					dataTopBC.set(i, entry.getValue().get(10)[0]);
 
-					dataBottomBC.set(i, entry.getValue().get(9)[0]);
+					dataBottomBC.set(i, entry.getValue().get(11)[0]);
 					
-					dataRunOff.set(i, entry.getValue().get(10)[0]);
+					dataRunOff.set(i, entry.getValue().get(12)[0]);
 
 					i++;
 				}
@@ -320,10 +342,12 @@ public class WriteNetCDFRichards1D {
 				dataFile.write(psiVar, origin, dataPsi);
 				dataFile.write(waterHeightVar, origin, dataWaterHeight);
 				dataFile.write(iCVar, origin, dataPsiIC);
-				dataFile.write(velocitiesVar, origin, dataVelocities);
-				dataFile.write(velocitiesCapillaryVar, origin, dataVelocitiesCapillary);
-				dataFile.write(velocitiesGravitationalVar, origin, dataVelocitiesGravitational);
-				dataFile.write(pecletVar, origin, dataPeclet);
+				dataFile.write(darcyVelocitiesVar, origin, dataDarcyVelocities);
+				dataFile.write(darcyVelocitiesCapillaryVar, origin, dataDarcyVelocitiesCapillary);
+				dataFile.write(darcyVelocitiesGravityVar, origin, dataDarcyVelocitiesGravity);
+				dataFile.write(poreVelocitiesVar, origin, dataPoreVelocities);
+				dataFile.write(celerityVar, origin, dataCelerity);
+				dataFile.write(kinematicRatioVar, origin, dataKinematicRatio);
 				dataFile.write(errorVar, origin, dataError);
 				dataFile.write(topBCVar, origin, dataTopBC);
 				dataFile.write(bottomBCVar, origin, dataBottomBC);

@@ -164,6 +164,7 @@ public class WriteNetCDFEnergy1D {
 				Variable temperatureVar = dataFile.addVariable(null, "T", DataType.DOUBLE, dims);
 				Variable iCVar = dataFile.addVariable(null, "TIC", DataType.DOUBLE, "depth");
 				Variable internalEnergyVar = dataFile.addVariable(null, "internalEnergy", DataType.DOUBLE, dims);
+				Variable energyFluxesVar = dataFile.addVariable(null, "energyFlux", DataType.DOUBLE, dualDims);
 				Variable diffusionFluxesVar = dataFile.addVariable(null, "diffusionFlux", DataType.DOUBLE, dualDims);
 				Variable advectionFluxesVar = dataFile.addVariable(null, "advectionFlux", DataType.DOUBLE, dualDims);
 				Variable pecletVar = dataFile.addVariable(null, "peclet", DataType.DOUBLE, dualDims);
@@ -180,6 +181,8 @@ public class WriteNetCDFEnergy1D {
 				dataFile.addVariableAttribute(iCVar, new Attribute("long_name", "Initial condition for temperature"));
 				dataFile.addVariableAttribute(internalEnergyVar, new Attribute("units", "Joule"));
 				dataFile.addVariableAttribute(internalEnergyVar, new Attribute("long_name", "Internal energy"));
+				dataFile.addVariableAttribute(energyFluxesVar, new Attribute("units", "W/m^2"));
+				dataFile.addVariableAttribute(energyFluxesVar, new Attribute("long_name", "Heat flux"));
 				dataFile.addVariableAttribute(diffusionFluxesVar, new Attribute("units", "W/m^2"));
 				dataFile.addVariableAttribute(diffusionFluxesVar, new Attribute("long_name", "Heat diffusion flux"));
 				dataFile.addVariableAttribute(advectionFluxesVar, new Attribute("units", "W/m^2"));
@@ -218,6 +221,7 @@ public class WriteNetCDFEnergy1D {
 				// adimensional water content (theta) data
 				ArrayDouble.D2 dataInternalEnergy = new ArrayDouble.D2(NREC, lvlDim.getLength());
 				ArrayDouble.D2 dataTemperature = new ArrayDouble.D2(NREC, lvlDim.getLength());
+				ArrayDouble.D2 dataEnergyFluxes = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
 				ArrayDouble.D2 dataDiffusionFluxes = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
 				ArrayDouble.D2 dataAdvectionFluxes = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
 				ArrayDouble.D2 dataPeclet = new ArrayDouble.D2(NREC, dualLvlDim.getLength());
@@ -268,35 +272,42 @@ public class WriteNetCDFEnergy1D {
 					}
 					
 					myTempVariable =  entry.getValue().get(3);
+					for (int lvl = 0; lvl < NLVL; lvl++) {
+
+						dataEnergyFluxes.set(i,lvl, myTempVariable[lvl]);
+
+					}
+					
+					myTempVariable =  entry.getValue().get(4);
 					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 
 						dataDiffusionFluxes.set(i,lvl, myTempVariable[lvl]);
 
 					}
 
-					myTempVariable =  entry.getValue().get(4);
+					myTempVariable =  entry.getValue().get(5);
 					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 
 						dataAdvectionFluxes.set(i,lvl, myTempVariable[lvl]);
 
 					}
 					
-					myTempVariable =  entry.getValue().get(5);
+					myTempVariable =  entry.getValue().get(6);
 					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 
 						dataPeclet.set(i,lvl, myTempVariable[lvl]);
 
 					}
 
-					dataError.set(i, entry.getValue().get(6)[0]);
+					dataError.set(i, entry.getValue().get(7)[0]);
 
-					dataAirTemperature.set(i, entry.getValue().get(7)[0]);
+					dataAirTemperature.set(i, entry.getValue().get(8)[0]);
 
-					dataShortWave.set(i, entry.getValue().get(8)[0]);
+					dataShortWave.set(i, entry.getValue().get(9)[0]);
 					
-					dataWindVelocity.set(i, entry.getValue().get(9)[0]);
+					dataWindVelocity.set(i, entry.getValue().get(10)[0]);
 					
-					dataBottomBC.set(i, entry.getValue().get(10)[0]);
+					dataBottomBC.set(i, entry.getValue().get(11)[0]);
 
 					i++;
 				}

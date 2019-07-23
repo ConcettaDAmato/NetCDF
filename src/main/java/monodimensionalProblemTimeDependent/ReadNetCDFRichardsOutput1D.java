@@ -64,6 +64,11 @@ public class ReadNetCDFRichardsOutput1D {
 	@Out
 	@Unit("m/s")
 	public double[] runOff;
+	
+	@Description("Volume error at each time step")
+	@Out
+	@Unit("m")
+	public double[] errorVolume;
 
 
 	int[] size;
@@ -88,16 +93,20 @@ public class ReadNetCDFRichardsOutput1D {
 				Variable dataPsi = dataFile.findVariable("psi");
 				Variable dataTheta = dataFile.findVariable("water_heigth");
 				Variable dataRunOff = dataFile.findVariable("runOff");
+				Variable dataErrorVolume = dataFile.findVariable("error");
 
 				size = dataRunOff.getShape();
 
 				runOff = new double[size[0]];
+				errorVolume = new double[size[0]];
 				
 				ArrayDouble.D1 dataArrayRunOff = (ArrayDouble.D1) dataRunOff.read(null, size);
+				ArrayDouble.D1 dataArrayErrorVolume = (ArrayDouble.D1) dataErrorVolume.read(null, size);
 
 				for (int i = 0; i < size[0]; i++) {
 
 					runOff[i] = dataArrayRunOff.get(i);
+					errorVolume[i] = dataArrayErrorVolume.get(i);
 					//System.out.println(runOff[i]);
 				}
 
