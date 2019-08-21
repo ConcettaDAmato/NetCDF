@@ -129,20 +129,23 @@ public class RichardsBuffer2D {
 		// thetas
 		tempVariable.add(inputVariable.get(2).clone());
 		
-		// Darcy velocities
+		// saturation degree
 		tempVariable.add(inputVariable.get(3).clone());
+		
+		// Darcy velocities
+		tempVariable.add(inputVariable.get(4).clone());
 //		for(int i=0; i<inputVariable.get(2).length; i++) {
 //			System.out.println(inputVariable.get(2)[i]);
 //		}
 //		System.out.println("\\\\\\\\\\\\ \n\n");
 //		// Darcy velocities x component
-		tempVariable.add(inputVariable.get(4).clone());
+		tempVariable.add(inputVariable.get(5).clone());
 //		for(int i=0; i<inputVariable.get(3).length; i++) {
 //			System.out.println(inputVariable.get(3)[i]);
 //		}
 //		System.out.println("\\\\\\\\\\\\ \n\n");
 		// Darcy velocities z component
-		tempVariable.add(inputVariable.get(5).clone());
+		tempVariable.add(inputVariable.get(6).clone());
 //		for(int i=0; i<inputVariable.get(4).length; i++) {
 //			System.out.println(inputVariable.get(4)[i]);
 //		}		

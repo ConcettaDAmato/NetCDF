@@ -179,6 +179,7 @@ public class WriteNetCDFRichards2D {
 				Variable psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
 				Variable iCVar = dataFile.addVariable(null, "psiIC", DataType.DOUBLE, "x");
 				Variable thetaVar = dataFile.addVariable(null, "theta", DataType.DOUBLE, dims);
+				Variable saturationDegreeVar = dataFile.addVariable(null, "saturationDegree", DataType.DOUBLE, dims);
 				Variable darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocities", DataType.DOUBLE, dualDims);
 				Variable darcyVelocitiesXVar = dataFile.addVariable(null, "darcyVelocitiesX", DataType.DOUBLE, dualDims);
 				Variable darcyVelocitiesZVar = dataFile.addVariable(null, "darcyVelocitiesZ", DataType.DOUBLE, dualDims);
@@ -198,7 +199,9 @@ public class WriteNetCDFRichards2D {
 				dataFile.addVariableAttribute(iCVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(iCVar, new Attribute("long_name", "Initial condition for water suction"));
 				dataFile.addVariableAttribute(thetaVar, new Attribute("units", "-"));
-				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "adimensional water content"));
+				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "Adimensional water content"));
+				dataFile.addVariableAttribute(saturationDegreeVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(saturationDegreeVar, new Attribute("long_name", "Saturation degree"));
 				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("units", "m/s"));
 				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("long_name", "Darcy velocities"));
 				dataFile.addVariableAttribute(darcyVelocitiesXVar, new Attribute("units", "m/s"));
@@ -250,6 +253,7 @@ public class WriteNetCDFRichards2D {
 				// These data are those created by bufferWriter class. This will write our hydraulic head (psi) and
 				// adimensional water content (theta) data
 				ArrayDouble.D2 dataTheta = new ArrayDouble.D2(NREC, xDim.getLength());
+				ArrayDouble.D2 dataSaturationDegree = new ArrayDouble.D2(NREC, xDim.getLength());
 				ArrayDouble.D2 dataPsi = new ArrayDouble.D2(NREC, xDim.getLength());
 				ArrayDouble.D2 dataDarcyVelocities = new ArrayDouble.D2(NREC, xDualDim.getLength());
 				ArrayDouble.D2 dataDarcyVelocitiesX = new ArrayDouble.D2(NREC, xDualDim.getLength());
@@ -302,63 +306,70 @@ public class WriteNetCDFRichards2D {
 						dataTheta.set(i, n, myTempVariable[n+1]);
 
 					}
-
+					
 					myTempVariable =  entry.getValue().get(3);
 					for (int n = 0; n < myTempVariable.length-1; n++) {
 
-						dataDarcyVelocities.set(i, n, myTempVariable[n+1]);
+						dataSaturationDegree.set(i, n, myTempVariable[n+1]);
 
 					}
 
 					myTempVariable =  entry.getValue().get(4);
 					for (int n = 0; n < myTempVariable.length-1; n++) {
 
-						dataDarcyVelocitiesX.set(i, n, myTempVariable[n+1]);
+						dataDarcyVelocities.set(i, n, myTempVariable[n+1]);
 
 					}
 
 					myTempVariable =  entry.getValue().get(5);
 					for (int n = 0; n < myTempVariable.length-1; n++) {
 
+						dataDarcyVelocitiesX.set(i, n, myTempVariable[n+1]);
+
+					}
+
+					myTempVariable =  entry.getValue().get(6);
+					for (int n = 0; n < myTempVariable.length-1; n++) {
+
 						dataDarcyVelocitiesZ.set(i, n, myTempVariable[n+1]);
 
 					}
 //
-//					myTempVariable =  entry.getValue().get(5);
+//					myTempVariable =  entry.getValue().get(7);
 //					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 //
 //						dataDarcyVelocitiesGravity.set(i,lvl, myTempVariable[lvl]);
 //
 //					}
 //
-//					myTempVariable =  entry.getValue().get(6);
+//					myTempVariable =  entry.getValue().get(8);
 //					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 //
 //						dataPoreVelocities.set(i,lvl, myTempVariable[lvl]);
 //
 //					}
 //
-//					myTempVariable =  entry.getValue().get(7);
+//					myTempVariable =  entry.getValue().get(9);
 //					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 //
 //						dataCelerity.set(i,lvl, myTempVariable[lvl]);
 //
 //					}
 //
-//					myTempVariable =  entry.getValue().get(8);
+//					myTempVariable =  entry.getValue().get(10);
 //					for (int lvl = 0; lvl < dualNLVL; lvl++) {
 //
 //						dataKinematicRatio.set(i,lvl, myTempVariable[lvl]);
 //
 //					}
 //
-//					dataError.set(i, entry.getValue().get(9)[0]);
+//					dataError.set(i, entry.getValue().get(11)[0]);
 //
-//					dataTopBC.set(i, entry.getValue().get(10)[0]);
+//					dataTopBC.set(i, entry.getValue().get(12)[0]);
 //
-//					dataBottomBC.set(i, entry.getValue().get(11)[0]);
+//					dataBottomBC.set(i, entry.getValue().get(13)[0]);
 //
-//					dataRunOff.set(i, entry.getValue().get(12)[0]);
+//					dataRunOff.set(i, entry.getValue().get(14)[0]);
 
 					i++;
 				}
@@ -377,6 +388,7 @@ public class WriteNetCDFRichards2D {
 				dataFile.write(timeVar, origin, times);
 				dataFile.write(psiVar, origin, dataPsi);
 				dataFile.write(thetaVar, origin, dataTheta);
+				dataFile.write(saturationDegreeVar, origin, dataSaturationDegree);
 				dataFile.write(iCVar, origin, dataPsiIC);
 				dataFile.write(darcyVelocitiesVar, origin, dataDarcyVelocities);
 				dataFile.write(darcyVelocitiesXVar, origin, dataDarcyVelocitiesX);
