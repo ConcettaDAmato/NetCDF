@@ -60,102 +60,64 @@ public class ReadNetCDFRichardsOutput1D {
 	@Unit("m")
 	public double[][] theta;
 
-	@Description("Runoff")
-	@Out
-	@Unit("m/s")
-	public double[] runOff;
-	
-	@Description("Volume error at each time step")
-	@Out
-	@Unit("m")
-	public double[] errorVolume;
-
-
-	int[] size;
-
-	int step = 0;
+	private int[] size;
 
 	@Execute
 	public void read() throws IOException {
 
-		if (step == 0) {
 
-			// Open the file. The ReadOnly parameter tells netCDF we want
-			// read-only access to the file.
-			NetcdfFile dataFile = null;
-			String filename = richardsOutputFilename;
-			// Open the file.
-			try {
+		// Open the file. The ReadOnly parameter tells netCDF we want
+		// read-only access to the file.
+		NetcdfFile dataFile = null;
+		String filename = richardsOutputFilename;
+		// Open the file.
+		try {
 
-				dataFile = NetcdfFile.open(filename, null);
+			dataFile = NetcdfFile.open(filename, null);
 
-				// Retrieve the variables named "___"
-				Variable dataPsi = dataFile.findVariable("psi");
-				Variable dataTheta = dataFile.findVariable("water_heigth");
-				Variable dataRunOff = dataFile.findVariable("runOff");
-				Variable dataErrorVolume = dataFile.findVariable("error");
+			// Retrieve the variables named "___"
+			Variable dataPsi = dataFile.findVariable("psi");
+			Variable dataTheta = dataFile.findVariable("theta");
 
-				size = dataRunOff.getShape();
+			size = dataPsi.getShape();
 
-				runOff = new double[size[0]];
-				errorVolume = new double[size[0]];
-				
-				ArrayDouble.D1 dataArrayRunOff = (ArrayDouble.D1) dataRunOff.read(null, size);
-				ArrayDouble.D1 dataArrayErrorVolume = (ArrayDouble.D1) dataErrorVolume.read(null, size);
+			psi = new double[size[0]][size[1]];
+			theta = new double[size[0]][size[1]];
 
-				for (int i = 0; i < size[0]; i++) {
+			ArrayDouble.D2 dataArrayPsi = (ArrayDouble.D2) dataPsi.read(null, size);
+			ArrayDouble.D2 dataArrayTheta = (ArrayDouble.D2) dataTheta.read(null, size);
 
-					runOff[i] = dataArrayRunOff.get(i);
-					errorVolume[i] = dataArrayErrorVolume.get(i);
-					//System.out.println(runOff[i]);
+			for (int i = 0; i < size[0]; i++) {
+				for (int j = 0; j < size[1]; j++) {
+					psi[i][j] = dataArrayPsi.get(i,j);
+					theta[i][j] = dataArrayTheta.get(i,j);
+					//System.out.println(" psi:" +psi[i][j]);
 				}
-
-				//////////////////////////
-				//////////////////////////
-				//////////////////////////
-
-				size = dataPsi.getShape();
-
-				psi = new double[size[0]][size[1]];
-				theta = new double[size[0]][size[1]];
-
-				ArrayDouble.D2 dataArrayPsi = (ArrayDouble.D2) dataPsi.read(null, size);
-				ArrayDouble.D2 dataArrayTheta = (ArrayDouble.D2) dataTheta.read(null, size);
-
-				for (int i = 0; i < size[0]; i++) {
-					for (int j = 0; j < size[1]; j++) {
-						psi[i][j] = dataArrayPsi.get(i,j);
-						theta[i][j] = dataArrayTheta.get(i,j);
-						//System.out.println(" psi:" +psi[i][j]);
-					}
-					//System.out.println("\n");
-				}
-				
-			} catch (InvalidRangeException e) {
-				e.printStackTrace();
-
-			} finally {
-				if (dataFile != null)
-					try {
-						dataFile.close();
-					} catch (IOException ioe) {
-						ioe.printStackTrace();
-					}
+				//System.out.println("\n");
 			}
 
-			System.out.println("*** SUCCESS reading example file " + richardsOutputFilename);
+		} catch (InvalidRangeException e) {
+			e.printStackTrace();
 
+		} finally {
+			if (dataFile != null)
+				try {
+					dataFile.close();
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
 		}
-		step++;
+
+		System.out.println("*** SUCCESS reading " + richardsOutputFilename);
 
 	}
-	
+
 	public static void main(String[] args)  throws Exception {
-		
+
 		ReadNetCDFRichardsOutput1D myReader = new ReadNetCDFRichardsOutput1D();
-		
+
 		myReader.richardsOutputFilename = "C:/Users/Niccolo/eclipse-workspace/richards1D/resources/Output/test1.nc";
-		
+
 		myReader.read();
 	}
 }
