@@ -1,13 +1,20 @@
 /**
+ * This package contains the classes to read and write NetCDF files for 1D problems.
  * 
- */
-/**
- * To store results of a 1D pde integration in NetCDF by using a buffer to store variables until the computation is going on.
- * Then a .py code is used to read data a plot them.
+ * Richards-1D
+ * 	- ReadNetCDFRichardsGrid1D.java to read the input data for the simulation
+ *  - ReadNetCDFRichardsOutput1D.java to read the output file, used within the JUnit Test
+ *  - WriteNetCDFRichards1DDouble.java to save the output in double precision
+ *  - WriteNetCDFRichards1DFloat.java to save the output in float precision
+ *  
+ * FreeThaw-1D
+ * 	- ReadNetCDFFreezingThawingGrid1D.java to read the input data for the simulation
+ *  - ReadNetCDFFreezingThawingOutput1D.java to read the output file, used within the JUnit Test
+ *  - WriteNetCDFFreezingThawing1DDouble.java to save the output in double precision
+ *  - WriteNetCDFFreezingThawing1DFloat.java to save the output in float precision
+ *  - WriteNetCDFFreezingThawing1DSpinupDouble.java to save the output in double precision mainly for spin-up simulation
  * 
- * BufferWriter and SimpleMonodimensionalTimeDependentWritere are two classes created to learn how to use NetCDF
- * 
- * @author Niccolo` Tubini
+ * @author Niccolo` Tubini, Concetta D'Amato
  *
  */
 package monodimensionalProblemTimeDependent;

@@ -1,12 +1,16 @@
 /**
  * 
- */
-/**
- * @author Niccolo` Tubini
- * This package collects buffers to store outputs during the simulation and save them on a file only once the simulation is finished.
- * This will become an OMS component, and it is independent on the format of the output files.
+ * This package collects buffers to store outputs during the simulation. The outputs are then
+ * save on the disk every n time steps.
  * 
- * It will be necessary to write this component in the most generic way!
+ * Richards-1D
+ *	- RichardsBuffer1D.java 
+ * 
+ * FreeThaw-1D
+ * 	- FreezingThawingBuffer1D.java 
+ * 
+ * 
+ * @author Niccolo` Tubini
  *
  */
 package bufferWriter;
