@@ -160,6 +160,11 @@ public class ReadNetCDFRichardsGrid1D {
 	@Out
 	@Unit(" ")
 	public double[] par5SWRC;
+	
+	@Description("Control volume index for calibration")
+	@Out
+	@Unit(" ")
+	public int[] controlVolumeIndex;
 
 
 	int[] size;
@@ -203,6 +208,7 @@ public class ReadNetCDFRichardsGrid1D {
 				Variable dataPar3SWRC = dataFile.findVariable("par3SWRC");
 				Variable dataPar4SWRC = dataFile.findVariable("par4SWRC");
 				Variable dataPar5SWRC = dataFile.findVariable("par5SWRC");
+				Variable dataControlVolumeIndex = dataFile.findVariable("controlVolumeIndex");
 
 
 				size = dataEta.getShape();
@@ -213,32 +219,20 @@ public class ReadNetCDFRichardsGrid1D {
 				zDual = new double[size[0]];
 				psiIC = new double[size[0]];
 				temperature = new double[size[0]];
-				spaceDelta = new double[size[0]];
 				controlVolume = new double[size[0]];
 				rheologyID = new int[size[0]];
 				parameterID = new int[size[0]];
 				
-				ArrayDouble.D1 dataArrayEta;
-				ArrayDouble.D1 dataArrayEtaDual;
-				ArrayDouble.D1 dataArrayZ;
-				ArrayDouble.D1 dataArrayZDual;
-				ArrayDouble.D1 dataArrayPsiIC;
-				ArrayDouble.D1 dataArrayTemperatureIC;				
-				ArrayDouble.D1 dataArraySpaceDelta;
-				ArrayDouble.D1 dataArrayControlVolume;
-				ArrayInt.D1 dataArrayRheologyID;
-				ArrayInt.D1 dataArrayParameterID;
+				ArrayDouble.D1 dataArrayEta = (ArrayDouble.D1) dataEta.read(null, size);
+				ArrayDouble.D1 dataArrayEtaDual = (ArrayDouble.D1) dataEtaDual.read(null, size);
+				ArrayDouble.D1 dataArrayZ = (ArrayDouble.D1) dataZ.read(null, size);
+				ArrayDouble.D1 dataArrayZDual = (ArrayDouble.D1) dataZDual.read(null, size);
+				ArrayDouble.D1 dataArrayPsiIC = (ArrayDouble.D1) dataPsiIC.read(null, size);
+				ArrayDouble.D1 dataArrayTemperatureIC = (ArrayDouble.D1) dataTemperatureIC.read(null, size);				
+				ArrayDouble.D1 dataArrayControlVolume = (ArrayDouble.D1) dataControlVolume.read(null, size);
+				ArrayInt.D1 dataArrayRheologyID = (ArrayInt.D1) dataRheologyID.read(null, size);
+				ArrayInt.D1 dataArrayParameterID = (ArrayInt.D1) dataParameterID.read(null, size);
 
-				dataArrayEta = (ArrayDouble.D1) dataEta.read(null, size);
-				dataArrayEtaDual = (ArrayDouble.D1) dataEtaDual.read(null, size);
-				dataArrayZ = (ArrayDouble.D1) dataZ.read(null, size);
-				dataArrayZDual = (ArrayDouble.D1) dataZDual.read(null, size);
-				dataArrayPsiIC = (ArrayDouble.D1) dataPsiIC.read(null, size);
-				dataArrayTemperatureIC = (ArrayDouble.D1) dataTemperatureIC.read(null, size);
-				dataArraySpaceDelta = (ArrayDouble.D1) dataSpaceDelta.read(null, size);
-				dataArrayControlVolume = (ArrayDouble.D1) dataControlVolume.read(null, size);
-				dataArrayRheologyID = (ArrayInt.D1) dataRheologyID.read(null, size);
-				dataArrayParameterID = (ArrayInt.D1) dataParameterID.read(null, size);
 
 				for (int i = 0; i < size[0]; i++) {
 
@@ -248,13 +242,26 @@ public class ReadNetCDFRichardsGrid1D {
 					zDual[i] = dataArrayZDual.get(i);
 					psiIC[i] = dataArrayPsiIC.get(i);
 					temperature[i] = dataArrayTemperatureIC.get(i);
-					spaceDelta[i] = dataArraySpaceDelta.get(i);
 					controlVolume[i] = dataArrayControlVolume.get(i);
 					rheologyID[i] = dataArrayRheologyID.get(i);
 					parameterID[i] = dataArrayParameterID.get(i);
 					
 				}
+				
+				size = dataSpaceDelta.getShape();
+				
+				
+				spaceDelta = new double[size[0]];
+				
+				
+				ArrayDouble.D1 dataArraySpaceDelta = (ArrayDouble.D1) dataSpaceDelta.read(null, size);
 
+				
+				for (int i = 0; i < size[0]; i++) {
+					
+					spaceDelta[i] = dataArraySpaceDelta.get(i);
+
+				}
 				//////////////////////////
 				//////////////////////////
 				//////////////////////////
@@ -275,34 +282,20 @@ public class ReadNetCDFRichardsGrid1D {
 				par5SWRC = new double[size[0]];
 
 
-				ArrayDouble.D1 dataArrayThetaS;
-				ArrayDouble.D1 dataArrayThetaR;
-				ArrayDouble.D1 dataArrayThetaWp;
-				ArrayDouble.D1 dataArrayThetaFc;
-				ArrayDouble.D1 dataArrayKs;
-				ArrayDouble.D1 dataArrayAlphaSS;
-				ArrayDouble.D1 dataArrayBetaSS;
-				ArrayDouble.D1 dataArrayPar1SWRC;
-				ArrayDouble.D1 dataArrayPar2SWRC;
-				ArrayDouble.D1 dataArrayPar3SWRC;
-				ArrayDouble.D1 dataArrayPar4SWRC;
-				ArrayDouble.D1 dataArrayPar5SWRC;
-
-
-				dataArrayThetaS = (ArrayDouble.D1) dataThetaS.read(null, size);
-				dataArrayThetaR = (ArrayDouble.D1) dataThetaR.read(null, size);
-				dataArrayThetaWp = (ArrayDouble.D1) dataThetaWp.read(null, size);
-				dataArrayThetaFc = (ArrayDouble.D1) dataThetaFc.read(null, size);
-				dataArrayKs = (ArrayDouble.D1) dataKs.read(null, size);
-				dataArrayAlphaSS = (ArrayDouble.D1) dataAlphaSS.read(null, size);
-				dataArrayBetaSS = (ArrayDouble.D1) dataBetaSS.read(null, size);
-				dataArrayPar1SWRC = (ArrayDouble.D1) dataPar1SWRC.read(null, size);
-				dataArrayPar2SWRC = (ArrayDouble.D1) dataPar2SWRC.read(null, size);
-				dataArrayPar3SWRC = (ArrayDouble.D1) dataPar3SWRC.read(null, size);
-				dataArrayPar4SWRC = (ArrayDouble.D1) dataPar4SWRC.read(null, size);
-				dataArrayPar5SWRC = (ArrayDouble.D1) dataPar5SWRC.read(null, size);
-
-
+				ArrayDouble.D1 dataArrayThetaS = (ArrayDouble.D1) dataThetaS.read(null, size);
+				ArrayDouble.D1 dataArrayThetaR = (ArrayDouble.D1) dataThetaR.read(null, size);
+				ArrayDouble.D1 dataArrayThetaWp = (ArrayDouble.D1) dataThetaWp.read(null, size);
+				ArrayDouble.D1 dataArrayThetaFc = (ArrayDouble.D1) dataThetaFc.read(null, size);
+				ArrayDouble.D1 dataArrayKs= (ArrayDouble.D1) dataKs.read(null, size);
+				ArrayDouble.D1 dataArrayAlphaSS = (ArrayDouble.D1) dataAlphaSS.read(null, size);
+				ArrayDouble.D1 dataArrayBetaSS = (ArrayDouble.D1) dataBetaSS.read(null, size);
+				ArrayDouble.D1 dataArrayPar1SWRC = (ArrayDouble.D1) dataPar1SWRC.read(null, size);
+				ArrayDouble.D1 dataArrayPar2SWRC = (ArrayDouble.D1) dataPar2SWRC.read(null, size);
+				ArrayDouble.D1 dataArrayPar3SWRC = (ArrayDouble.D1) dataPar3SWRC.read(null, size);
+				ArrayDouble.D1 dataArrayPar4SWRC = (ArrayDouble.D1) dataPar4SWRC.read(null, size);
+				ArrayDouble.D1 dataArrayPar5SWRC = (ArrayDouble.D1) dataPar5SWRC.read(null, size);
+				
+				
 				for (int i = 0; i < size[0]; i++) {
 
 					thetaS[i] = dataArrayThetaS.get(i);
@@ -321,6 +314,19 @@ public class ReadNetCDFRichardsGrid1D {
 
 				}
 
+				size = dataControlVolumeIndex.getShape();
+
+				controlVolumeIndex = new int[size[0]];
+				
+				ArrayInt.D1 dataArrayControlVolumeIndex = (ArrayInt.D1) dataControlVolumeIndex.read(null, size);
+
+				
+				for (int i = 0; i < size[0]; i++) {
+
+					controlVolumeIndex[i] = dataArrayControlVolumeIndex.get(i);
+				}
+				
+				
 			} catch (InvalidRangeException e) {
 				e.printStackTrace();
 
