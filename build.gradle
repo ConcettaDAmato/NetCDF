@@ -4,18 +4,20 @@ apply plugin: 'eclipse'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 sourceCompatibility = '1.8'
 
-// to get project version from command line, just type
-// $ gradle -PprojVersion=<version_number> build
-// default is na
-if (project.hasProperty('projVersion')) {
-      project.version = project.projVersion
-} else {
-      project.version = '0.0.1'
-}
+
+
+    if (project.hasProperty("projVersion")) {
+        project.setVersion(projVersion+'-SNAPSHOT')
+        println "I have the build version: " + version 
+    } else {
+     	project.setVersion('0.0.1-SNAPSHOT')
+     	println "I have the build version: 0.0.1"
+    }
+
 
 // name with versioning of the jar file
 jar {
-    baseName = 'NetCDF'    
+    baseName = 'netCDF'    
 }
 
 // In this section you declare where to find the dependencies of your project
