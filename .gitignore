@@ -3,3 +3,4 @@ bin/
 .project
 .settings/
 build/
+src/main/java/monodimensionalProblemTimeDependent/ReadNetCDFRichardsGrid1D_old.java
