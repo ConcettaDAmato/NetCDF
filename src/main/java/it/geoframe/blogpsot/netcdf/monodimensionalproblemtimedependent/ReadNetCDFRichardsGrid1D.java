@@ -1,7 +1,7 @@
 /*
  * GNU GPL v3 License
  *
- * Copyright 2016 Marialaura Bancheri
+ * Copyright 2019 Niccolo' Tubini
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ import ucar.ma2.InvalidRangeException;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
-@Description("This class reads a NetCDF containing 1D grid data. The input file is created with RichardsMeshGen.ipynb (Jupyter Notebook)")
+@Description("This class reads a NetCDF containing 1D grid data. The input file is created with WHETGEO1D.ipynb (Jupyter Notebook)")
 @Documentation("")
 @Author(name = "Niccolo' Tubini, Riccardo Rigon", contact = "tubini.niccolo@gmail.com")
 @Keywords("Hydrology, Richards, Infiltration")
@@ -111,16 +111,6 @@ public class ReadNetCDFRichardsGrid1D {
 	@Unit("-")
 	public double[] thetaR;
 	
-	@Description("Adimensional residual water content at wilting point")
-	@Out
-	@Unit("-")
-	public double[] thetaWp;
-	
-	@Description("Adimensional residual water content at field capacity")
-	@Out
-	@Unit("-")
-	public double[] thetaFc;
-
 	@Description("Hydraulic conductivity at saturation")
 	@Out
 	@Unit("m/s")
@@ -198,8 +188,6 @@ public class ReadNetCDFRichardsGrid1D {
 				Variable dataParameterID = dataFile.findVariable("parameterID");
 				Variable dataThetaS = dataFile.findVariable("thetaS");
 				Variable dataThetaR = dataFile.findVariable("thetaR");
-				Variable dataThetaWp = dataFile.findVariable("thetaWp");
-				Variable dataThetaFc = dataFile.findVariable("thetaFc");
 				Variable dataKs = dataFile.findVariable("ks");
 				Variable dataAlphaSS = dataFile.findVariable("alphaSpecificStorage");
 				Variable dataBetaSS = dataFile.findVariable("betaSpecificStorage");
@@ -270,8 +258,6 @@ public class ReadNetCDFRichardsGrid1D {
 
 				thetaS = new double[size[0]];
 				thetaR = new double[size[0]];
-				thetaWp = new double[size[0]];
-				thetaFc = new double[size[0]];
 				Ks = new double[size[0]];
 				alphaSS = new double[size[0]];
 				betaSS = new double[size[0]];
@@ -284,8 +270,6 @@ public class ReadNetCDFRichardsGrid1D {
 
 				ArrayDouble.D1 dataArrayThetaS = (ArrayDouble.D1) dataThetaS.read(null, size);
 				ArrayDouble.D1 dataArrayThetaR = (ArrayDouble.D1) dataThetaR.read(null, size);
-				ArrayDouble.D1 dataArrayThetaWp = (ArrayDouble.D1) dataThetaWp.read(null, size);
-				ArrayDouble.D1 dataArrayThetaFc = (ArrayDouble.D1) dataThetaFc.read(null, size);
 				ArrayDouble.D1 dataArrayKs= (ArrayDouble.D1) dataKs.read(null, size);
 				ArrayDouble.D1 dataArrayAlphaSS = (ArrayDouble.D1) dataAlphaSS.read(null, size);
 				ArrayDouble.D1 dataArrayBetaSS = (ArrayDouble.D1) dataBetaSS.read(null, size);
@@ -300,8 +284,6 @@ public class ReadNetCDFRichardsGrid1D {
 
 					thetaS[i] = dataArrayThetaS.get(i);
 					thetaR[i] = dataArrayThetaR.get(i);
-					thetaWp[i] = dataArrayThetaWp.get(i);
-					thetaFc[i] = dataArrayThetaFc.get(i);
 					Ks[i] = dataArrayKs.get(i);
 					alphaSS[i] = dataArrayAlphaSS.get(i);
 					betaSS[i] = dataArrayBetaSS.get(i);
