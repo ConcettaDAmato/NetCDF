@@ -189,7 +189,6 @@ public class WriteNetCDFRichards1DFloat {
 	Variable poreVelocitiesVar;
 	Variable celerityVar;
 	Variable kinematicRatioVar;
-	Variable ETsVar; // i.e. transpired stressed water
 	Variable errorVar;
 	Variable topBCVar;
 	Variable bottomBCVar;
@@ -213,7 +212,6 @@ public class WriteNetCDFRichards1DFloat {
 	ArrayFloat.D2 dataPoreVelocities;
 	ArrayFloat.D2 dataCelerity;
 	ArrayFloat.D2 dataKinematicRatio;
-	ArrayFloat.D2 dataETs;
 	ArrayFloat.D2 dataWaterVolume;
 
 
@@ -342,9 +340,6 @@ public class WriteNetCDFRichards1DFloat {
 					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("long_name", "Kinematic ratio (Rasmussen et al. 2000)"));
 				}
 
-				ETsVar  = dataFile.addVariable(null, "ets", DataType.FLOAT, dims);
-				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water"));
 				
 				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
@@ -436,7 +431,6 @@ public class WriteNetCDFRichards1DFloat {
 
 				dataPsi = new ArrayFloat.D2(NREC, KMAX);
 				dataTheta = new ArrayFloat.D2(NREC, KMAX);
-				dataETs = new ArrayFloat.D2(NREC, KMAX);
 				dataWaterVolume = new ArrayFloat.D2(NREC, KMAX);
 				dataError = new ArrayFloat.D1(NREC);
 				dataTopBC = new ArrayFloat.D1(NREC);
@@ -563,20 +557,14 @@ public class WriteNetCDFRichards1DFloat {
 						}
 					}
 					
-					tempVariable =  entry.getValue().get(9);
-					for (int k = 0; k < KMAX; k++) {
 
-						dataETs.set(i, k, (float) tempVariable[k]);
+					dataError.set(i, (float) entry.getValue().get(9)[0]);
 
-					}
+					dataTopBC.set(i, (float) entry.getValue().get(10)[0]);
 
-					dataError.set(i, (float) entry.getValue().get(10)[0]);
+					dataBottomBC.set(i, (float) entry.getValue().get(11)[0]);
 
-					dataTopBC.set(i, (float) entry.getValue().get(11)[0]);
-
-					dataBottomBC.set(i, (float) entry.getValue().get(12)[0]);
-
-					dataRunOff.set(i, (float) entry.getValue().get(13)[0]);
+					dataRunOff.set(i, (float) entry.getValue().get(12)[0]);
 
 					i++;
 				}				
@@ -618,11 +606,7 @@ public class WriteNetCDFRichards1DFloat {
 				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
 					dataFile.write(dataFile.findVariable("kinematicRatio"), origin, dataKinematicRatio);
 				}
-				
-				if (outVariablesList.contains("ET") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
-				}
-				
+
 				dataFile.write(dataFile.findVariable("error"), time_origin, dataError);
 				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
 				dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);

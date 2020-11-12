@@ -189,7 +189,6 @@ public class WriteNetCDFRichards1DDouble {
 	Variable poreVelocitiesVar;
 	Variable celerityVar;
 	Variable kinematicRatioVar;
-	Variable ETsVar; // i.e. transpired stressed water
 	Variable errorVar;
 	Variable topBCVar;
 	Variable bottomBCVar;
@@ -213,7 +212,6 @@ public class WriteNetCDFRichards1DDouble {
 	ArrayDouble.D2 dataPoreVelocities;
 	ArrayDouble.D2 dataCelerity;
 	ArrayDouble.D2 dataKinematicRatio;
-	ArrayDouble.D2 dataETs;
 	ArrayDouble.D2 dataWaterVolume;
 
 
@@ -341,10 +339,6 @@ public class WriteNetCDFRichards1DDouble {
 					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("units", "-"));
 					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("long_name", "Kinematic ratio (Rasmussen et al. 2000)"));
 				}
-
-				ETsVar  = dataFile.addVariable(null, "ets", DataType.DOUBLE, dims);
-				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water"));
 				
 				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
@@ -436,7 +430,6 @@ public class WriteNetCDFRichards1DDouble {
 
 				dataPsi = new ArrayDouble.D2(NREC, KMAX);
 				dataTheta = new ArrayDouble.D2(NREC, KMAX);
-				dataETs = new ArrayDouble.D2(NREC, KMAX);
 				dataWaterVolume = new ArrayDouble.D2(NREC, KMAX);
 				dataError = new ArrayDouble.D1(NREC);
 				dataTopBC = new ArrayDouble.D1(NREC);
@@ -563,20 +556,13 @@ public class WriteNetCDFRichards1DDouble {
 						}
 					}
 					
-					tempVariable =  entry.getValue().get(9);
-					for (int k = 0; k < KMAX; k++) {
+					dataError.set(i, entry.getValue().get(9)[0]);
 
-						dataETs.set(i,k, tempVariable[k]);
+					dataTopBC.set(i, entry.getValue().get(10)[0]);
 
-					}
+					dataBottomBC.set(i, entry.getValue().get(11)[0]);
 
-					dataError.set(i, entry.getValue().get(10)[0]);
-
-					dataTopBC.set(i, entry.getValue().get(11)[0]);
-
-					dataBottomBC.set(i, entry.getValue().get(12)[0]);
-
-					dataRunOff.set(i, entry.getValue().get(13)[0]);
+					dataRunOff.set(i, entry.getValue().get(12)[0]);
 
 					i++;
 				}				
@@ -619,9 +605,6 @@ public class WriteNetCDFRichards1DDouble {
 					dataFile.write(dataFile.findVariable("kinematicRatio"), origin, dataKinematicRatio);
 				}
 				
-				if (outVariablesList.contains("ET") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
-				}
 				
 				dataFile.write(dataFile.findVariable("error"), time_origin, dataError);
 				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
