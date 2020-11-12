@@ -50,6 +50,11 @@ public class ReadNetCDFRichardsGrid1D {
 	@Description("File name of NetCDF containing grid data")
 	@In
 	public String richardsGridFilename;
+	
+	@Description("Number of control volume")
+	@Out
+	@Unit("-")
+	public int KMAX;
 
 	@Description("eta coordinate of volume centroids: zero is at soil surface and and positive upward")
 	@Out
@@ -176,6 +181,7 @@ public class ReadNetCDFRichardsGrid1D {
 				dataFile = NetcdfFile.open(filename, null);
 
 				// Retrieve the variables named "___"
+				Variable dataKMAX = dataFile.findVariable("KMAX");
 				Variable dataEta = dataFile.findVariable("eta");
 				Variable dataEtaDual = dataFile.findVariable("etaDual");
 				Variable dataZ = dataFile.findVariable("z");
@@ -198,7 +204,8 @@ public class ReadNetCDFRichardsGrid1D {
 				Variable dataPar5SWRC = dataFile.findVariable("par5SWRC");
 				Variable dataControlVolumeIndex = dataFile.findVariable("controlVolumeIndex");
 
-
+				KMAX = dataKMAX.readScalarInt();
+				
 				size = dataEta.getShape();
 
 				eta = new double[size[0]];
