@@ -38,7 +38,7 @@ import ucar.nc2.Variable;
 
 @Description("This class reads a NetCDF containing 1D grid data. The input file is created with WHETGEO1D.ipynb (Jupyter Notebook)")
 @Documentation("")
-@Author(name = "Concetta D'Amato, Niccolo' Tubini, Riccardo Rigon", contact = "")
+@Author(name = "Concetta D'Amato, Niccolo' Tubini, Riccardo Rigon", contact = "concetta.damato@unitn.it")
 @Keywords("Hydrology, Richards, Infiltration")
 // @Label(JGTConstants.HYDROGEOMORPHOLOGY)
 // @Name("shortradbal")
@@ -125,6 +125,11 @@ public class ReadNetCDFRichardsLysimeterGrid1D {
 	@Out
 	@Unit("-")
 	public double[] thetaFC;
+	
+	@Description("Initial condition for root distribution")
+	@Out
+	@Unit("-")
+	public double[] rootIC;
 
 	@Description("Hydraulic conductivity at saturation")
 	@Out
@@ -206,6 +211,7 @@ public class ReadNetCDFRichardsLysimeterGrid1D {
 				Variable dataThetaR = dataFile.findVariable("thetaR");
 				Variable dataThetaWP = dataFile.findVariable("thetaWP");
 				Variable dataThetaFC = dataFile.findVariable("thetaFC");
+				Variable dataRootIC = dataFile.findVariable("root0");
 				Variable dataKs = dataFile.findVariable("ks");
 				Variable dataAlphaSS = dataFile.findVariable("alphaSpecificStorage");
 				Variable dataBetaSS = dataFile.findVariable("betaSpecificStorage");
@@ -225,6 +231,7 @@ public class ReadNetCDFRichardsLysimeterGrid1D {
 				z = new double[size[0]];
 				zDual = new double[size[0]];
 				psiIC = new double[size[0]];
+				rootIC = new double[size[0]];
 				temperature = new double[size[0]];
 				controlVolume = new double[size[0]];
 				rheologyID = new int[size[0]];
@@ -236,6 +243,7 @@ public class ReadNetCDFRichardsLysimeterGrid1D {
 				ArrayDouble.D1 dataArrayZDual = (ArrayDouble.D1) dataZDual.read(null, size);
 				ArrayDouble.D1 dataArrayPsiIC = (ArrayDouble.D1) dataPsiIC.read(null, size);
 				ArrayDouble.D1 dataArrayTemperatureIC = (ArrayDouble.D1) dataTemperatureIC.read(null, size);				
+				ArrayDouble.D1 dataArrayRootIC = (ArrayDouble.D1) dataRootIC.read(null, size);
 				ArrayDouble.D1 dataArrayControlVolume = (ArrayDouble.D1) dataControlVolume.read(null, size);
 				ArrayInt.D1 dataArrayRheologyID = (ArrayInt.D1) dataRheologyID.read(null, size);
 				ArrayInt.D1 dataArrayParameterID = (ArrayInt.D1) dataParameterID.read(null, size);
@@ -249,6 +257,7 @@ public class ReadNetCDFRichardsLysimeterGrid1D {
 					zDual[i] = dataArrayZDual.get(i);
 					psiIC[i] = dataArrayPsiIC.get(i);
 					temperature[i] = dataArrayTemperatureIC.get(i);
+					rootIC[i] = dataArrayRootIC.get(i);
 					controlVolume[i] = dataArrayControlVolume.get(i);
 					rheologyID[i] = dataArrayRheologyID.get(i);
 					parameterID[i] = dataArrayParameterID.get(i);
