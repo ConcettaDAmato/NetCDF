@@ -25,7 +25,6 @@ import oms3.annotations.Description;
 import oms3.annotations.Documentation;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
-import oms3.annotations.Initialize;
 import oms3.annotations.Keywords;
 import oms3.annotations.License;
 import oms3.annotations.Out;
@@ -96,10 +95,10 @@ public class ReadNetCDFRichardsGrid1D {
 	@Unit("m")
 	public double[] controlVolume;
 
-	@Description("Label describing the rheology model for each control volume")
+	@Description("Label describing the equation state for each control volume")
 	@Out
 	@Unit("-")
-	public int[] rheologyID;
+	public int[] equationStateID;
 
 	@Description("Label identifying the set of parameters for each control volume")
 	@Out
@@ -190,7 +189,7 @@ public class ReadNetCDFRichardsGrid1D {
 				Variable dataTemperatureIC = dataFile.findVariable("T0");
 				Variable dataSpaceDelta = dataFile.findVariable("spaceDelta");
 				Variable dataControlVolume = dataFile.findVariable("controlVolume");
-				Variable dataRheologyID = dataFile.findVariable("rheologyID");
+				Variable dataEquationStateID = dataFile.findVariable("equationStateID");
 				Variable dataParameterID = dataFile.findVariable("parameterID");
 				Variable dataThetaS = dataFile.findVariable("thetaS");
 				Variable dataThetaR = dataFile.findVariable("thetaR");
@@ -215,7 +214,7 @@ public class ReadNetCDFRichardsGrid1D {
 				psiIC = new double[size[0]];
 				temperature = new double[size[0]];
 				controlVolume = new double[size[0]];
-				rheologyID = new int[size[0]];
+				equationStateID = new int[size[0]];
 				parameterID = new int[size[0]];
 				
 				ArrayDouble.D1 dataArrayEta = (ArrayDouble.D1) dataEta.read(null, size);
@@ -225,7 +224,7 @@ public class ReadNetCDFRichardsGrid1D {
 				ArrayDouble.D1 dataArrayPsiIC = (ArrayDouble.D1) dataPsiIC.read(null, size);
 				ArrayDouble.D1 dataArrayTemperatureIC = (ArrayDouble.D1) dataTemperatureIC.read(null, size);				
 				ArrayDouble.D1 dataArrayControlVolume = (ArrayDouble.D1) dataControlVolume.read(null, size);
-				ArrayInt.D1 dataArrayRheologyID = (ArrayInt.D1) dataRheologyID.read(null, size);
+				ArrayInt.D1 dataArrayEquationStateID = (ArrayInt.D1) dataEquationStateID.read(null, size);
 				ArrayInt.D1 dataArrayParameterID = (ArrayInt.D1) dataParameterID.read(null, size);
 
 
@@ -238,7 +237,7 @@ public class ReadNetCDFRichardsGrid1D {
 					psiIC[i] = dataArrayPsiIC.get(i);
 					temperature[i] = dataArrayTemperatureIC.get(i);
 					controlVolume[i] = dataArrayControlVolume.get(i);
-					rheologyID[i] = dataArrayRheologyID.get(i);
+					equationStateID[i] = dataArrayEquationStateID.get(i);
 					parameterID[i] = dataArrayParameterID.get(i);
 					
 				}
