@@ -50,18 +50,18 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.Variable;
 
-@Description("This class writes a NetCDF with Richards' equation outputs. Before writing, outputs are stored in a buffer writer"
+@Description("This class writes a NetCDF with heat diffusion equation considering the surface energy budget outputs. Before writing, outputs are stored in a buffer writer"
 		+ " and as simulation is ended they are written in a NetCDF file.")
 @Documentation("")
 @Author(name = "Niccolo' Tubini, Riccardo Rigon", contact = "tubini.niccolo@gmail.com")
-@Keywords("Hydrology, Richards, Infiltration")
+@Keywords("Hydrology, heat equation, diffusion")
 //@Label(JGTConstants.HYDROGEOMORPHOLOGY)
 //@Name("shortradbal")
 //@Status(Status.CERTIFIED)
 @License("General Public License Version 3 (GPLv3)")
 
 
-public class WriteNetCDFRichards1DDouble {
+public class WriteNetCDFHeatDiffusionWithSurfaceEnergyBudget1DDouble {
 
 	@Description()
 	@In
@@ -93,15 +93,15 @@ public class WriteNetCDFRichards1DDouble {
 	@Unit ()
 	public double[] controlVolume;
 	
-	@Description("Initial condition for water suction.")
+	@Description("Water suction profile.")
 	@In
 	@Unit ()
-	public double[] psiIC;
+	public double[] psi;
 	
-	@Description("Temperature profile.")
+	@Description("Initial condition for temperature profile.")
 	@In
 	@Unit ()
-	public double[] temperature;
+	public double[] temperatureIC;
 	
 	@In
 	public int writeFrequency = 1;
@@ -130,7 +130,7 @@ public class WriteNetCDFRichards1DDouble {
 	@In
 	public String swrcModel = " ";
 	@In
-	public String soilHydraulicConductivityModel = " ";
+	public String soilThermalConductivityModel = " ";
 	@In
 	public String interfaceConductivityModel = " ";
 
@@ -180,39 +180,39 @@ public class WriteNetCDFRichards1DDouble {
 	Variable depthVar;
 	Variable dualDepthVar;
 	Variable psiVar;
-	Variable psiICVar;
+	Variable temperatureICVar;
 	Variable temperatureVar;
 	Variable thetaVar;
-	Variable darcyVelocitiesVar;
-	Variable darcyVelocitiesCapillaryVar;
-	Variable darcyVelocitiesGravityVar;
-	Variable poreVelocitiesVar;
-	Variable celerityVar;
-	Variable kinematicRatioVar;
+	Variable internalEnergyVar;
+	Variable diffusionHeatFluxVar;
 	Variable errorVar;
-	Variable topBCVar;
+	Variable airTemperatureVar;
+	Variable shortWaveOutVar;
+	Variable shortWaveInVar;
+	Variable longWaveOutVar;
+	Variable longWaveInVar;
+	Variable sensibleHeatFluxVar;
+	Variable actualLatentHeatFluxVar;
 	Variable bottomBCVar;
-	Variable runOffVar;
 	Variable controlVolumeVar;
-	Variable waterVolumeVar;
 
-	ArrayDouble.D1 dataPsiIC;
-	ArrayDouble.D1 dataTemperature;
+	ArrayDouble.D1 dataPsi;
+	ArrayDouble.D1 dataTemperatureIC;
 	ArrayDouble.D1 dataError;
-	ArrayDouble.D1 dataTopBC;
+	ArrayDouble.D1 dataAirTemperature;
+	ArrayDouble.D1 dataShortWaveOut;
+	ArrayDouble.D1 dataShortWaveIn;
+	ArrayDouble.D1 dataLongWaveOut;
+	ArrayDouble.D1 dataLongWaveIn;
+	ArrayDouble.D1 dataSensibleHeatFlux;
+	ArrayDouble.D1 dataActualLatentHeatFlux;
 	ArrayDouble.D1 dataBottomBC;
-	ArrayDouble.D1 dataRunOff;
 	ArrayDouble.D1 dataControlVolume;
 	
-	ArrayDouble.D2 dataPsi;
+	ArrayDouble.D2 dataTemperature;
 	ArrayDouble.D2 dataTheta;
-	ArrayDouble.D2 dataDarcyVelocities;
-	ArrayDouble.D2 dataDarcyVelocitiesCapillary;
-	ArrayDouble.D2 dataDarcyVelocitiesGravity;
-	ArrayDouble.D2 dataPoreVelocities;
-	ArrayDouble.D2 dataCelerity;
-	ArrayDouble.D2 dataKinematicRatio;
-	ArrayDouble.D2 dataWaterVolume;
+	ArrayDouble.D2 dataInternalEnergy;
+	ArrayDouble.D2 dataDiffusionHeatFlux;
 
 
 	int step = 0;
@@ -259,7 +259,7 @@ public class WriteNetCDFRichards1DDouble {
 				dataFile.addGroupAttribute(null, new Attribute("path grid",pathGrid));			
 				dataFile.addGroupAttribute(null, new Attribute("time delta",timeDelta));
 				dataFile.addGroupAttribute(null, new Attribute("swrc model",swrcModel));
-				dataFile.addGroupAttribute(null, new Attribute("soil hydraulic conductivity model",soilHydraulicConductivityModel));
+				dataFile.addGroupAttribute(null, new Attribute("soil thermal conductivity model",soilThermalConductivityModel));
 				dataFile.addGroupAttribute(null, new Attribute("interface conductivity model",interfaceConductivityModel));
 
 				//add dimensions  where time dimension is unlimit
@@ -288,79 +288,67 @@ public class WriteNetCDFRichards1DDouble {
 				String dims = "time depth";
 				String dualDims = "time dualDepth";
 
-				psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
+				psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, "depth");
 				dataFile.addVariableAttribute(psiVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiVar, new Attribute("long_name", "Water suction."));
 				
-				psiICVar = dataFile.addVariable(null, "psiIC", DataType.DOUBLE, "depth");
-				dataFile.addVariableAttribute(psiICVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(psiICVar, new Attribute("long_name", "Initial condition for water suction."));
+				temperatureICVar = dataFile.addVariable(null, "temperatureIC", DataType.DOUBLE, "depth");
+				dataFile.addVariableAttribute(temperatureICVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(temperatureICVar, new Attribute("long_name", "Initial condition for temperature."));
 				
-				temperatureVar = dataFile.addVariable(null, "T", DataType.DOUBLE, "depth");
+				temperatureVar = dataFile.addVariable(null, "T", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(temperatureVar, new Attribute("units", "K"));
 				dataFile.addVariableAttribute(temperatureVar, new Attribute("long_name", "Temperature."));
 				
-				thetaVar = dataFile.addVariable(null, "theta", DataType.DOUBLE, dims);
+				thetaVar = dataFile.addVariable(null, "waterContent", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(thetaVar, new Attribute("units", " "));
-				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "theta for within soil and water depth."));
+				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "Adimensional water content."));
 				
-				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocity", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("long_name", "Darcy velocity."));
-				}
+				internalEnergyVar = dataFile.addVariable(null, "internalEnergy", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(internalEnergyVar, new Attribute("units", "J"));
+				dataFile.addVariableAttribute(internalEnergyVar, new Attribute("long_name", "Internal energy"));
 				
-				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					darcyVelocitiesCapillaryVar = dataFile.addVariable(null, "darcyVelocityCapillary", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(darcyVelocitiesCapillaryVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(darcyVelocitiesCapillaryVar, new Attribute("long_name", "Darcy velocity due to the gradient of capillary forces."));
-				}
-				
-				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					darcyVelocitiesGravityVar = dataFile.addVariable(null, "darcyVelocity_gravity", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(darcyVelocitiesGravityVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(darcyVelocitiesGravityVar, new Attribute("long_name", "Darcy velocities due to the gradient of gravity."));
-				}
-				
-				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					poreVelocitiesVar = dataFile.addVariable(null, "poreVelocity", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(poreVelocitiesVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(poreVelocitiesVar, new Attribute("long_name", "Pore velocities, ratio between the Darcy velocities and porosity."));
-				}
-				
-				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					celerityVar = dataFile.addVariable(null, "celerities", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(celerityVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(celerityVar, new Attribute("long_name", "Celerity of the pressure wave (Rasmussen et al. 2000"));
-				}
-				
-				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					kinematicRatioVar  = dataFile.addVariable(null, "kinematicRatio", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("units", "-"));
-					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("long_name", "Kinematic ratio (Rasmussen et al. 2000)"));
-				}
-				
-				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
-				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("long_name", "Water volume in each control volume"));
+				diffusionHeatFluxVar = dataFile.addVariable(null, "diffusionHeatFlux", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(diffusionHeatFluxVar, new Attribute("units", "W m-2"));
+				dataFile.addVariableAttribute(diffusionHeatFluxVar, new Attribute("long_name", "Diffusion heat flux."));
 
 				
 				errorVar = dataFile.addVariable(null, "error", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(errorVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(errorVar, new Attribute("long_name", "Volume error at each time step."));
+				dataFile.addVariableAttribute(errorVar, new Attribute("units", "J"));
+				dataFile.addVariableAttribute(errorVar, new Attribute("long_name", "Internal energy error at each time step."));
 				
-				topBCVar  = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(topBCVar, new Attribute("units", "mm"));                   //?????
-				dataFile.addVariableAttribute(topBCVar, new Attribute("long_name", "Rainfall heights")); //?????
+				airTemperatureVar  = dataFile.addVariable(null, "airT", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(airTemperatureVar, new Attribute("units", "K"));                   
+				dataFile.addVariableAttribute(airTemperatureVar, new Attribute("long_name", "Air temperature")); 
+				
+				shortWaveOutVar  = dataFile.addVariable(null, "swOut", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(shortWaveOutVar, new Attribute("units", "W m-2"));                   
+				dataFile.addVariableAttribute(shortWaveOutVar, new Attribute("long_name", "Outcoming short-wave radiation")); 
+				
+				shortWaveInVar  = dataFile.addVariable(null, "swIn", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(shortWaveInVar, new Attribute("units", "W m-2"));                   
+				dataFile.addVariableAttribute(shortWaveInVar, new Attribute("long_name", "Incoming short-wave radiation")); 
+
+				longWaveOutVar  = dataFile.addVariable(null, "lwOut", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(longWaveOutVar, new Attribute("units", "W m-2"));                   
+				dataFile.addVariableAttribute(longWaveOutVar, new Attribute("long_name", "Outcoming long-wave radiation")); 
+				
+				longWaveInVar  = dataFile.addVariable(null, "lwIn", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(longWaveInVar, new Attribute("units", "W m-2"));                   
+				dataFile.addVariableAttribute(longWaveInVar, new Attribute("long_name", "Incoming long-wave radiation")); 
+				
+				sensibleHeatFluxVar  = dataFile.addVariable(null, "H", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(sensibleHeatFluxVar, new Attribute("units", "W m-2"));                   
+				dataFile.addVariableAttribute(sensibleHeatFluxVar, new Attribute("long_name", "Sensible heat flux")); 
+				
+				actualLatentHeatFluxVar  = dataFile.addVariable(null, "LE", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(actualLatentHeatFluxVar, new Attribute("units", "W m-2"));                   
+				dataFile.addVariableAttribute(actualLatentHeatFluxVar, new Attribute("long_name", "Actual latent heat flux")); 
 				
 				bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
 				dataFile.addVariableAttribute(bottomBCVar, new Attribute("units", ""));                 //?????
 				dataFile.addVariableAttribute(bottomBCVar, new Attribute("long_name", "")); //?????
 								
-				runOffVar = dataFile.addVariable(null, "runOff", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(runOffVar, new Attribute("units", "m/s"));
-				dataFile.addVariableAttribute(runOffVar, new Attribute("long_name", "run off"));
-
 				controlVolumeVar = dataFile.addVariable(null, "controlVolume", DataType.DOUBLE, "depth");
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("long_name", "dimension of each control volumes"));
@@ -369,14 +357,14 @@ public class WriteNetCDFRichards1DDouble {
 				depth = new ArrayDouble.D1(kDim.getLength());
 				dualDepth = new ArrayDouble.D1(dualKDim.getLength());
 				dataControlVolume = new ArrayDouble.D1(kDim.getLength());
-				dataPsiIC = new ArrayDouble.D1(kDim.getLength());
-				dataTemperature = new ArrayDouble.D1(kDim.getLength());
+				dataPsi = new ArrayDouble.D1(kDim.getLength());
+				dataTemperatureIC = new ArrayDouble.D1(kDim.getLength());
 
 				for (int k = 0; k < kDim.getLength(); k++) {
 					depth.set(k, spatialCoordinate[k]);
 					dataControlVolume.set(k, controlVolume[k]);
-					dataPsiIC.set(k, psiIC[k]);
-					dataTemperature.set(k, temperature[k]);	
+					dataPsi.set(k, psi[k]);
+					dataTemperatureIC.set(k, temperatureIC[k]);	
 				}
 				
 				for (int k = 0; k < kDim.getLength()-1; k++) {
@@ -392,8 +380,8 @@ public class WriteNetCDFRichards1DDouble {
 				dataFile.write(depthVar, depth);
 				dataFile.write(dualDepthVar, dualDepth);
 				dataFile.write(controlVolumeVar, dataControlVolume);
-				dataFile.write(psiICVar, dataPsiIC);
-				dataFile.write(temperatureVar, dataTemperature);
+				dataFile.write(psiVar, dataPsi);
+				dataFile.write(temperatureICVar, dataTemperatureIC);
 				stepCreation = 1;
 
 				System.out.println("\n\t***Created NetCDF " + fileNameToSave +"\n\n");
@@ -428,41 +416,20 @@ public class WriteNetCDFRichards1DDouble {
 
 				times = Array.factory(DataType.INT, new int[] {NREC});
 
-				dataPsi = new ArrayDouble.D2(NREC, KMAX);
+				dataTemperature = new ArrayDouble.D2(NREC, KMAX);
 				dataTheta = new ArrayDouble.D2(NREC, KMAX);
-				dataWaterVolume = new ArrayDouble.D2(NREC, KMAX);
+				dataInternalEnergy = new ArrayDouble.D2(NREC, KMAX);
+				dataDiffusionHeatFlux = new ArrayDouble.D2(NREC, DUALKMAX);
 				dataError = new ArrayDouble.D1(NREC);
-				dataTopBC = new ArrayDouble.D1(NREC);
+				dataAirTemperature = new ArrayDouble.D1(NREC);
+				dataShortWaveOut = new ArrayDouble.D1(NREC);
+				dataShortWaveIn = new ArrayDouble.D1(NREC);
+				dataLongWaveOut = new ArrayDouble.D1(NREC);
+				dataLongWaveIn = new ArrayDouble.D1(NREC);
+				dataSensibleHeatFlux = new ArrayDouble.D1(NREC);
+				dataActualLatentHeatFlux = new ArrayDouble.D1(NREC);
 				dataBottomBC = new ArrayDouble.D1(NREC);
-				dataRunOff = new ArrayDouble.D1(NREC);
 
-
-				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					dataDarcyVelocities = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					dataDarcyVelocitiesCapillary = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					dataDarcyVelocitiesGravity = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					dataPoreVelocities = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					dataCelerity = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					dataKinematicRatio = new ArrayDouble.D2(NREC, KMAX);
-				}		
-				
-
-				
 				int i=0;
 				it = variables.entrySet().iterator();
 				while (it.hasNext()) {
@@ -483,7 +450,7 @@ public class WriteNetCDFRichards1DDouble {
 					tempVariable =  entry.getValue().get(0);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataPsi.set(i, k, tempVariable[k]);
+						dataTemperature.set(i, k, tempVariable[k]);
 
 					}
 
@@ -498,71 +465,37 @@ public class WriteNetCDFRichards1DDouble {
 					tempVariable =  entry.getValue().get(2);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataWaterVolume.set(i, k, tempVariable[k]);
+						dataInternalEnergy.set(i, k, tempVariable[k]);
 
 					}
 					
-					if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(3);
-						for (int k = 0; k < DUALKMAX; k++) {
+					
+					tempVariable =  entry.getValue().get(3);
+					for (int k = 0; k < DUALKMAX; k++) {
 
-							dataDarcyVelocities.set(i, k, tempVariable[k]);
+						dataDiffusionHeatFlux.set(i, k, tempVariable[k]);
 
-						}
 					}
 					
-					if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(4);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataDarcyVelocitiesCapillary.set(i, k, tempVariable[k]);
-
-						}
-					}
-
-					if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(5);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataDarcyVelocitiesGravity.set(i, k, tempVariable[k]);
-
-						}
-					}
-
-					if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(6);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataPoreVelocities.set(i,k, tempVariable[k]);
-
-						}
-					}
-
-					if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(7);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataCelerity.set(i,k, tempVariable[k]);
-
-						}
-					}
 					
-					if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(8);
-						for (int k = 0; k < DUALKMAX; k++) {
+					dataError.set(i, entry.getValue().get(4)[0]);
 
-							dataKinematicRatio.set(i,k, tempVariable[k]);
+					dataAirTemperature.set(i, entry.getValue().get(5)[0]);
 
-						}
-					}
+					dataShortWaveOut.set(i, entry.getValue().get(6)[0]);
 					
-					dataError.set(i, entry.getValue().get(9)[0]);
+					dataShortWaveIn.set(i, entry.getValue().get(7)[0]);
+					
+					dataLongWaveOut.set(i, entry.getValue().get(8)[0]);
+					
+					dataLongWaveIn.set(i, entry.getValue().get(9)[0]);
+					
+					dataSensibleHeatFlux.set(i, entry.getValue().get(10)[0]);
+					
+					dataActualLatentHeatFlux.set(i, entry.getValue().get(11)[0]);
+					
+					dataBottomBC.set(i, entry.getValue().get(12)[0]);
 
-					dataTopBC.set(i, entry.getValue().get(10)[0]);
-
-					dataBottomBC.set(i, entry.getValue().get(11)[0]);
-
-					dataRunOff.set(i, entry.getValue().get(12)[0]);
 
 					i++;
 				}				
@@ -577,44 +510,25 @@ public class WriteNetCDFRichards1DDouble {
 				
 				//				dataFile.write(kIndexVar, kIndex);
 				dataFile.write(dataFile.findVariable("time"), time_origin, times);
-				dataFile.write(dataFile.findVariable("psi"), origin, dataPsi);
-				dataFile.write(dataFile.findVariable("theta"), origin, dataTheta);
-				dataFile.write(dataFile.findVariable("waterVolume"), origin, dataWaterVolume);
-				
-				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocity"), origin, dataDarcyVelocities);
-				}
-				
-				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocityCapillary"), origin, dataDarcyVelocitiesCapillary);
-				}
-				
-				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocityGravity"), origin, dataDarcyVelocitiesGravity);
-				}
-				
-				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("poreVelocity"), origin, dataPoreVelocities);
-				}
-				
-				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("celerity"), origin, dataCelerity);
-				}
-				
-				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("kinematicRatio"), origin, dataKinematicRatio);
-				}
-				
-				
+				dataFile.write(dataFile.findVariable("T"), origin, dataTemperature);
+				dataFile.write(dataFile.findVariable("waterContent"), origin, dataTheta);
+				dataFile.write(dataFile.findVariable("internalEnergy"), origin, dataInternalEnergy);
+				dataFile.write(dataFile.findVariable("diffusionHeatFlux"), origin, dataDiffusionHeatFlux);
+
 				dataFile.write(dataFile.findVariable("error"), time_origin, dataError);
-				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
+				dataFile.write(dataFile.findVariable("airT"), time_origin, dataAirTemperature);
+				dataFile.write(dataFile.findVariable("swOut"), time_origin, dataShortWaveOut);	
+				dataFile.write(dataFile.findVariable("swIn"), time_origin, dataShortWaveIn);
+				dataFile.write(dataFile.findVariable("lwOut"), time_origin, dataLongWaveOut);
+				dataFile.write(dataFile.findVariable("lwIn"), time_origin, dataLongWaveIn);
+				dataFile.write(dataFile.findVariable("H"), time_origin, dataSensibleHeatFlux);
+				dataFile.write(dataFile.findVariable("LE"), time_origin, dataActualLatentHeatFlux);
 				dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);
-				dataFile.write(dataFile.findVariable("runOff"), time_origin, dataRunOff);
 
 				origin_counter = origin_counter + NREC;
 				
 				
-				fileSizeMB = ((3+outVariablesList.size())*KMAX + 5)*8*origin_counter/1000000;
+				fileSizeMB = (3*KMAX + DUALKMAX + 9)*8*origin_counter/1000000;
 //				System.out.println("\t\tfileSizeMB: " + fileSizeMB);
 				stepCreation ++;
 				if(fileSizeMB>fileSizeMax) {

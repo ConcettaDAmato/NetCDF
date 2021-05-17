@@ -142,7 +142,7 @@ public class WriteNetCDFRichards1DFloat {
 	
 	@Description("Maximum allowed file size")
 	@In
-	@Unit ()
+	@Unit ("MB")
 	public double fileSizeMax = 10000;
 	
 	@Description("Name of the variables to save")
@@ -615,7 +615,7 @@ public class WriteNetCDFRichards1DFloat {
 				origin_counter = origin_counter + NREC;
 				
 				
-				fileSizeMB = 1*KMAX*8*origin_counter/1000000;
+				fileSizeMB = ((3+outVariablesList.size())*KMAX + 5)*4*origin_counter/1000000;
 //				System.out.println("\t\tfileSizeMB: " + fileSizeMB);
 				stepCreation ++;
 				if(fileSizeMB>fileSizeMax) {

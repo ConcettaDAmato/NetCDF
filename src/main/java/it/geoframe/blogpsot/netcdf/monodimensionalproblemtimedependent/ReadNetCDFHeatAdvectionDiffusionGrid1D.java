@@ -48,7 +48,7 @@ import ucar.nc2.Variable;
 @Status(Status.CERTIFIED)
 @License("General Public License Version 3 (GPLv3)")
 
-public class ReadNetCDFHeatDiffusionGrid1D {
+public class ReadNetCDFHeatAdvectionDiffusionGrid1D {
 
 	@Description("File name of NetCDF containing grid data")
 	@In
@@ -232,23 +232,23 @@ public class ReadNetCDFHeatDiffusionGrid1D {
 
 
 				size = dataEta.getShape();
-				size1 = dataEtaDual.getShape();
-				sizeParameter = dataPar1SWRC.getShape();
 
 				KMAX = 0;
 				eta = new double[size[0]];
+				etaDual = new double[size[0]];
 				z = new double[size[0]];
+				zDual = new double[size[0]];
 				controlVolume = new double[size[0]];
 				psi = new double[size[0]];
 				temperatureIC = new double[size[0]];
 				equationStateID = new int[size[0]];
 				parameterID = new int[size[0]];
 				
-				etaDual = new double[size1[0]];
-				zDual = new double[size1[0]];
+				size1 = dataSpaceDelta.getShape();
 				spaceDelta = new double[size1[0]];
 					
 				
+				sizeParameter = dataPar1SWRC.getShape();
 				soilParticlesDensity = new double[sizeParameter[0]];
 				soilParticlesThermalConductivity = new double[sizeParameter[0]];
 				soilParticlesSpecificHeatCapacity = new double[sizeParameter[0]];
@@ -265,9 +265,9 @@ public class ReadNetCDFHeatDiffusionGrid1D {
 				betaSS = new double[sizeParameter[0]];
 				
 				ArrayDouble.D1 dataArrayEta = (ArrayDouble.D1) dataEta.read(null, size);
-				ArrayDouble.D1 dataArrayEtaDual= (ArrayDouble.D1) dataEtaDual.read(null, size1);
+				ArrayDouble.D1 dataArrayEtaDual= (ArrayDouble.D1) dataEtaDual.read(null, size);
 				ArrayDouble.D1 dataArrayZ = (ArrayDouble.D1) dataZ.read(null, size);
-				ArrayDouble.D1 dataArrayZDual = (ArrayDouble.D1) dataZDual.read(null, size1);
+				ArrayDouble.D1 dataArrayZDual = (ArrayDouble.D1) dataZDual.read(null, size);
 				ArrayDouble.D1 dataArrayPsiIC = (ArrayDouble.D1) dataPsiIC.read(null, size);
 				ArrayDouble.D1 dataArrayTemperatureIC = (ArrayDouble.D1) dataTemperatureIC.read(null, size);
 				ArrayDouble.D1 dataArraySpaceDelta = (ArrayDouble.D1) dataSpaceDelta.read(null, size1);
@@ -298,7 +298,9 @@ public class ReadNetCDFHeatDiffusionGrid1D {
 				for (int i = 0; i < size[0]; i++) {
 
 					eta[i] = dataArrayEta.get(i);
+					etaDual[i] = dataArrayEtaDual.get(i);
 					z[i] = dataArrayZ.get(i);
+					zDual[i] = dataArrayZDual.get(i);
 					psi[i] = dataArrayPsiIC.get(i);
 					temperatureIC[i] = dataArrayTemperatureIC.get(i);
 					controlVolume[i] = dataArrayControlVolume.get(i);
@@ -307,11 +309,8 @@ public class ReadNetCDFHeatDiffusionGrid1D {
 
 				}
 
-			
 				for (int i = 0; i < size1[0]; i++) {
 					
-					etaDual[i] = dataArrayEtaDual.get(i);
-					zDual[i] = dataArrayZDual.get(i);
 					spaceDelta[i] = dataArraySpaceDelta.get(i);
 
 				}

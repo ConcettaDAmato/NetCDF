@@ -88,12 +88,14 @@ public class ReadNetCDFRichardsOutput1D {
 			ArrayDouble.D2 dataArrayTheta = (ArrayDouble.D2) dataTheta.read(null, size);
 
 			for (int i = 0; i < size[0]; i++) {
+				
 				for (int j = 0; j < size[1]; j++) {
+					
 					psi[i][j] = dataArrayPsi.get(i,j);
 					theta[i][j] = dataArrayTheta.get(i,j);
-					//System.out.println(" psi:" +psi[i][j]);
+
 				}
-				//System.out.println("\n");
+
 			}
 
 		} catch (InvalidRangeException e) {
