@@ -183,6 +183,7 @@ public class WriteNetCDFRichards1DDouble {
 	Variable psiICVar;
 	Variable temperatureVar;
 	Variable thetaVar;
+	Variable saturationDegreeVar;
 	Variable darcyVelocitiesVar;
 	Variable darcyVelocitiesCapillaryVar;
 	Variable darcyVelocitiesGravityVar;
@@ -206,6 +207,7 @@ public class WriteNetCDFRichards1DDouble {
 	
 	ArrayDouble.D2 dataPsi;
 	ArrayDouble.D2 dataTheta;
+	ArrayDouble.D2 dataSaturationDegree;
 	ArrayDouble.D2 dataDarcyVelocities;
 	ArrayDouble.D2 dataDarcyVelocitiesCapillary;
 	ArrayDouble.D2 dataDarcyVelocitiesGravity;
@@ -303,6 +305,10 @@ public class WriteNetCDFRichards1DDouble {
 				thetaVar = dataFile.addVariable(null, "theta", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(thetaVar, new Attribute("units", " "));
 				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "theta for within soil and water depth."));
+				
+				saturationDegreeVar = dataFile.addVariable(null, "saturationDegree", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(saturationDegreeVar, new Attribute("units", "1"));
+				dataFile.addVariableAttribute(saturationDegreeVar, new Attribute("long_name", "saturation degree."));
 				
 				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
 					darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocity", DataType.DOUBLE, dualDims);
@@ -431,6 +437,7 @@ public class WriteNetCDFRichards1DDouble {
 				dataPsi = new ArrayDouble.D2(NREC, KMAX);
 				dataTheta = new ArrayDouble.D2(NREC, KMAX);
 				dataWaterVolume = new ArrayDouble.D2(NREC, KMAX);
+				dataSaturationDegree = new ArrayDouble.D2(NREC, KMAX);
 				dataError = new ArrayDouble.D1(NREC);
 				dataTopBC = new ArrayDouble.D1(NREC);
 				dataBottomBC = new ArrayDouble.D1(NREC);
@@ -502,8 +509,15 @@ public class WriteNetCDFRichards1DDouble {
 
 					}
 					
+					tempVariable =  entry.getValue().get(3);
+					for (int k = 0; k < KMAX; k++) {
+
+						dataSaturationDegree.set(i, k, tempVariable[k]);
+
+					}
+					
 					if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(3);
+						tempVariable =  entry.getValue().get(4);
 						for (int k = 0; k < DUALKMAX; k++) {
 
 							dataDarcyVelocities.set(i, k, tempVariable[k]);
@@ -512,7 +526,7 @@ public class WriteNetCDFRichards1DDouble {
 					}
 					
 					if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(4);
+						tempVariable =  entry.getValue().get(5);
 						for (int k = 0; k < DUALKMAX; k++) {
 
 							dataDarcyVelocitiesCapillary.set(i, k, tempVariable[k]);
@@ -521,7 +535,7 @@ public class WriteNetCDFRichards1DDouble {
 					}
 
 					if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(5);
+						tempVariable =  entry.getValue().get(6);
 						for (int k = 0; k < DUALKMAX; k++) {
 
 							dataDarcyVelocitiesGravity.set(i, k, tempVariable[k]);
@@ -530,7 +544,7 @@ public class WriteNetCDFRichards1DDouble {
 					}
 
 					if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(6);
+						tempVariable =  entry.getValue().get(7);
 						for (int k = 0; k < DUALKMAX; k++) {
 
 							dataPoreVelocities.set(i,k, tempVariable[k]);
@@ -539,7 +553,7 @@ public class WriteNetCDFRichards1DDouble {
 					}
 
 					if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(7);
+						tempVariable =  entry.getValue().get(8);
 						for (int k = 0; k < DUALKMAX; k++) {
 
 							dataCelerity.set(i,k, tempVariable[k]);
@@ -548,7 +562,7 @@ public class WriteNetCDFRichards1DDouble {
 					}
 					
 					if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(8);
+						tempVariable =  entry.getValue().get(9);
 						for (int k = 0; k < DUALKMAX; k++) {
 
 							dataKinematicRatio.set(i,k, tempVariable[k]);
@@ -556,13 +570,13 @@ public class WriteNetCDFRichards1DDouble {
 						}
 					}
 					
-					dataError.set(i, entry.getValue().get(9)[0]);
+					dataError.set(i, entry.getValue().get(10)[0]);
 
-					dataTopBC.set(i, entry.getValue().get(10)[0]);
+					dataTopBC.set(i, entry.getValue().get(11)[0]);
 
-					dataBottomBC.set(i, entry.getValue().get(11)[0]);
+					dataBottomBC.set(i, entry.getValue().get(12)[0]);
 
-					dataRunOff.set(i, entry.getValue().get(12)[0]);
+					dataRunOff.set(i, entry.getValue().get(13)[0]);
 
 					i++;
 				}				
@@ -579,7 +593,8 @@ public class WriteNetCDFRichards1DDouble {
 				dataFile.write(dataFile.findVariable("time"), time_origin, times);
 				dataFile.write(dataFile.findVariable("psi"), origin, dataPsi);
 				dataFile.write(dataFile.findVariable("theta"), origin, dataTheta);
-				dataFile.write(dataFile.findVariable("waterVolume"), origin, dataWaterVolume);
+				dataFile.write(dataFile.findVariable("waterVolume"), origin, dataWaterVolume);				
+				dataFile.write(dataFile.findVariable("saturationDegree"), origin, dataSaturationDegree);
 				
 				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
 					dataFile.write(dataFile.findVariable("darcyVelocity"), origin, dataDarcyVelocities);
