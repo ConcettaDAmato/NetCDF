@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
-sourceCompatibility = '1.8'
+sourceCompatibility = 11
 
 
 
@@ -41,9 +41,9 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     
     // OMS annotation
-    // https://mvnrepository.com/artifact/org.jgrasstools/jgt-oms3
-    compile group: 'org.jgrasstools', name: 'jgt-oms3', version: '0.7.8'
-    
+    // https://mvnrepository.com/artifact/org.hortonmachine/hm-gears
+    implementation group: 'org.hortonmachine', name: 'hm-gears', version: '0.10.4'
+     
 	// NetCDF 
 	// https://mvnrepository.com/artifact/edu.ucar/netcdf
 	compile group: 'edu.ucar', name: 'netcdf', version: '4.3.22'
