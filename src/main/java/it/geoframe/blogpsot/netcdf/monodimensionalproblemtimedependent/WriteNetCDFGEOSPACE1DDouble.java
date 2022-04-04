@@ -61,7 +61,7 @@ import ucar.nc2.Variable;
 @License("General Public License Version 3 (GPLv3)")
 
 
-public class WriteNetCDFRichardsLysimeter1DDouble {
+public class WriteNetCDFGEOSPACE1DDouble {
 
 	@Description()
 	@In
@@ -102,6 +102,11 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 	@In
 	@Unit ()
 	public double[] temperature;
+	
+	@Description("Initial condition for root profile.")
+	@In
+	@Unit ()
+	public double[] rootIC;
 	
 	@In
 	public int writeFrequency = 1;
@@ -181,6 +186,7 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 	Variable dualDepthVar;
 	Variable psiVar;
 	Variable psiICVar;
+	Variable rootICVar;
 	Variable temperatureVar;
 	Variable thetaVar;
 	Variable darcyVelocitiesVar;
@@ -199,6 +205,7 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 
 	ArrayDouble.D1 dataPsiIC;
 	ArrayDouble.D1 dataTemperature;
+	ArrayDouble.D1 dataRootIC;
 	ArrayDouble.D1 dataError;
 	ArrayDouble.D1 dataTopBC;
 	ArrayDouble.D1 dataBottomBC;
@@ -298,6 +305,11 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 				dataFile.addVariableAttribute(psiICVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiICVar, new Attribute("long_name", "Initial condition for water suction."));
 				
+				rootICVar = dataFile.addVariable(null, "rootIC", DataType.DOUBLE, "depth");
+				dataFile.addVariableAttribute(rootICVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(rootICVar, new Attribute("long_name", "Initial condition for root depth."));
+
+				
 				temperatureVar = dataFile.addVariable(null, "T", DataType.DOUBLE, "depth");
 				dataFile.addVariableAttribute(temperatureVar, new Attribute("units", "K"));
 				dataFile.addVariableAttribute(temperatureVar, new Attribute("long_name", "Temperature."));
@@ -377,12 +389,14 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 				dataControlVolume = new ArrayDouble.D1(kDim.getLength());
 				dataPsiIC = new ArrayDouble.D1(kDim.getLength());
 				dataTemperature = new ArrayDouble.D1(kDim.getLength());
+				dataRootIC = new ArrayDouble.D1(kDim.getLength());
 
 				for (int k = 0; k < kDim.getLength(); k++) {
 					depth.set(k, spatialCoordinate[k]);
 					dataControlVolume.set(k, controlVolume[k]);
 					dataPsiIC.set(k, psiIC[k]);
-					dataTemperature.set(k, temperature[k]);	
+					dataTemperature.set(k, temperature[k]);
+					dataRootIC.set(k, rootIC[k]);
 				}
 				
 				for (int k = 0; k < kDim.getLength()-1; k++) {
@@ -399,6 +413,7 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 				dataFile.write(dualDepthVar, dualDepth);
 				dataFile.write(controlVolumeVar, dataControlVolume);
 				dataFile.write(psiICVar, dataPsiIC);
+				dataFile.write(rootICVar, dataRootIC);
 				dataFile.write(temperatureVar, dataTemperature);
 				stepCreation = 1;
 

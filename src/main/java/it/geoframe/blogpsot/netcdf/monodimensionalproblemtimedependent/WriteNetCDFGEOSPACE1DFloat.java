@@ -61,7 +61,7 @@ import ucar.nc2.Variable;
 @License("General Public License Version 3 (GPLv3)")
 
 
-public class WriteNetCDFRichardsLysimeter1DFloat {
+public class WriteNetCDFGEOSPACE1DFloat {
 
 	@Description()
 	@In
