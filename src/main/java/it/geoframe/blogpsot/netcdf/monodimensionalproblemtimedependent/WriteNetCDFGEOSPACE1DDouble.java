@@ -389,7 +389,7 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataControlVolume = new ArrayDouble.D1(kDim.getLength());
 				dataPsiIC = new ArrayDouble.D1(kDim.getLength());
 				dataTemperature = new ArrayDouble.D1(kDim.getLength());
-				dataRootIC = new ArrayDouble.D1(kDim.getLength());
+				dataRootIC = new ArrayDouble.D1(kDim.getLength());  // queste sono quelle che non cambiano nel tempo
 
 				for (int k = 0; k < kDim.getLength(); k++) {
 					depth.set(k, spatialCoordinate[k]);
@@ -449,11 +449,11 @@ public class WriteNetCDFGEOSPACE1DDouble {
 
 				times = Array.factory(DataType.INT, new int[] {NREC});
 
-				dataPsi = new ArrayDouble.D2(NREC, KMAX);
+				dataPsi = new ArrayDouble.D2(NREC, KMAX); // aggiungere le mie variabili a matrici 
 				dataTheta = new ArrayDouble.D2(NREC, KMAX);
 				dataETs = new ArrayDouble.D2(NREC, KMAX);
 				dataWaterVolume = new ArrayDouble.D2(NREC, KMAX);
-				dataError = new ArrayDouble.D1(NREC);
+				dataError = new ArrayDouble.D1(NREC); // aggiungere le mie variabili a vettori 
 				dataTopBC = new ArrayDouble.D1(NREC);
 				dataBottomBC = new ArrayDouble.D1(NREC);
 				dataRunOff = new ArrayDouble.D1(NREC);

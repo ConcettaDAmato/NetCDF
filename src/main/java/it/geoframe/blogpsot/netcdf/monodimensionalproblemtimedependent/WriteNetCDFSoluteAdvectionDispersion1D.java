@@ -103,6 +103,11 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 	@Unit ()
 	public double[] concentrationIC;
 	
+	@Description("Initial condition for root profile.")
+	@In
+	@Unit ()
+	public double[] rootIC;
+	
 	@In
 	public int writeFrequency = 1;
 
@@ -191,37 +196,49 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 	Variable timeVar;
 	Variable depthVar;
 	Variable dualDepthVar;
-	Variable psiICVar;
-	Variable concentrationICVar;
 	Variable psiVar;
-	Variable concentrationVar; ////SIAMO ARRIVATI QUA 
+	Variable psiICVar;
+	Variable rootICVar;
 	Variable thetaVar;
-	Variable internalEnergyVar;
-	Variable darcyFluxVar;
-	Variable heatFluxVar;
-	Variable errorHeatVar;
+	Variable waterVolumeVar;
+	Variable darcyVelocitiesVar;
+	Variable ETsVar;
+	
+	Variable concentrationICVar;
+	Variable concentrationsVar;
+	Variable waterVolumeConcentrationsVar;
+	Variable averageSoluteConcentrationVar;
+	Variable averageWaterVolumeSoluteConcentrationVar;
+	
+	Variable soluteFluxesVar;
+	Variable dispersionSoluteFluxesVar;
+	Variable advectionSoluteFluxesVar;
+	Variable errorWaterVolumeConcentrationVar;
 	Variable errorVolumeVar;
-//	Variable topHeatBCVar;
-//	Variable bottomHeatBCVar;
-//	Variable topRichardsBCVar;
-//	Variable bottomRichardsBCVar;
-	Variable controlVolumeVar;
+	Variable controlVolumeVar; 
 
 	ArrayDouble.D1 dataPsiIC;
-	ArrayDouble.D1 dataTemperatureIC;
-	ArrayDouble.D1 dataErrorHeat;
+	ArrayDouble.D1 dataRootIC;
+	ArrayDouble.D1 dataConcentrationIC;
+	ArrayDouble.D1 dataErrorWaterVolumeConcentration;
 	ArrayDouble.D1 dataErrorVolume;
-//	ArrayDouble.D1 dataTopHeatBC;
-//	ArrayDouble.D1 dataBottomHeatBC;
-//	ArrayDouble.D1 dataTopRichardsBC;
-//	ArrayDouble.D1 dataBottomRichardsBC;
 	ArrayDouble.D1 dataControlVolume;
+	ArrayDouble.D1 dataAverageSoluteConcentration;
+	ArrayDouble.D1 dataAverageWaterVolumeSoluteConcentration;
 	
-	ArrayDouble.D2 dataTemperature;
 	ArrayDouble.D2 dataPsi;
 	ArrayDouble.D2 dataTheta;
-	ArrayDouble.D2 dataDarcyFlux;
-	ArrayDouble.D2 dataHeatFlux;
+	ArrayDouble.D2 dataWaterVolume;
+	ArrayDouble.D2 dataDarcyVelocities;
+	ArrayDouble.D2 dataETs;
+	ArrayDouble.D2 dataConcentrations;
+	ArrayDouble.D2 dataWaterVolumeConcentrations;
+	ArrayDouble.D2 dataSoluteFluxes;
+	ArrayDouble.D2 dataDispersionSoluteFluxes;
+	ArrayDouble.D2 dataAdvectionSoluteFluxes;
+	
+	
+	
 
 
 	int step = 0;
@@ -261,12 +278,12 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, fileNameToSave);
 				// add a general attribute describing the problem and containing other relevant information for the user
 				dataFile.addGroupAttribute(null, new Attribute("Description of the problem",briefDescritpion));
-				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition for heat equation",topHeatBC));
-				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition for heat equation",bottomHeatBC));
+				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition for solute equation",topSoluteBC));
+				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition for solute equation",bottomSoluteBC));
 				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition for Richards equation",topRichardsBC));
 				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition for Richards equation",bottomRichardsBC));
-				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition for heat equation",pathHeatTopBC));
-				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition for heat equation",pathHeatBottomBC));
+				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition for solute equation",pathSoluteTopBC));
+				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition for heat equation",pathSoluteBottomBC));
 				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition for Richards equation",pathRichardsTopBC));
 				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition for Richards equation",pathRichardsBottomBC));
 				dataFile.addGroupAttribute(null, new Attribute("path grid",pathGrid));			
@@ -274,8 +291,8 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				dataFile.addGroupAttribute(null, new Attribute("swrc model",swrcModel));
 				dataFile.addGroupAttribute(null, new Attribute("soil hydraulic conductivity model",soilHydraulicConductivityModel));
 				dataFile.addGroupAttribute(null, new Attribute("interface hydraulic conductivity model",interfaceHydraulicConductivityModel));
-				dataFile.addGroupAttribute(null, new Attribute("soil thermal conductivity model",soilThermalConductivityModel));
-				dataFile.addGroupAttribute(null, new Attribute("interface thermal conductivity model",interfaceThermalConductivityModel));
+				//dataFile.addGroupAttribute(null, new Attribute("soil thermal conductivity model",soilThermalConductivityModel));
+				dataFile.addGroupAttribute(null, new Attribute("interface dispersion coefficient model",interfaceDispersionCoefficientModel));
 
 				//add dimensions  where time dimension is unlimit
 				// the spatial dimension is defined using just the indexes 
@@ -307,55 +324,70 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				dataFile.addVariableAttribute(psiICVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiICVar, new Attribute("long_name", "Initial condition for water suction."));
 				
-				temperatureICVar = dataFile.addVariable(null, "temperatureIC", DataType.DOUBLE, "depth");
-				dataFile.addVariableAttribute(temperatureICVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(temperatureICVar, new Attribute("long_name", "Initial condition for temperature."));
-
 				psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(psiVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiVar, new Attribute("long_name", "Water suction."));
 				
-				temperatureVar = dataFile.addVariable(null, "T", DataType.DOUBLE, dims);
-				dataFile.addVariableAttribute(temperatureVar, new Attribute("units", "K"));
-				dataFile.addVariableAttribute(temperatureVar, new Attribute("long_name", "Temperature."));
-				
+				rootICVar = dataFile.addVariable(null, "rootIC", DataType.DOUBLE, "depth");
+				dataFile.addVariableAttribute(rootICVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(rootICVar, new Attribute("long_name", "Initial condition for root depth."));
+
 				thetaVar = dataFile.addVariable(null, "theta", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(thetaVar, new Attribute("units", " "));
 				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "theta for within soil and water depth."));
-
-				darcyFluxVar = dataFile.addVariable(null, "darcyFlux", DataType.DOUBLE, dualDims);
-				dataFile.addVariableAttribute(darcyFluxVar, new Attribute("units", "m s-1"));
-				dataFile.addVariableAttribute(darcyFluxVar, new Attribute("long_name", "Darcy flux."));
 				
-				heatFluxVar = dataFile.addVariable(null, "heatFlux", DataType.DOUBLE, dualDims);
-				dataFile.addVariableAttribute(heatFluxVar, new Attribute("units", "W m-2"));
-				dataFile.addVariableAttribute(heatFluxVar, new Attribute("long_name", "Heat flux."));
+				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("long_name", "Water volume in each control volume"));
 
+				darcyVelocitiesVar = dataFile.addVariable(null, "darcyFlux", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("units", "m s-1"));
+				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("long_name", "Darcy flux."));
 				
-				errorHeatVar = dataFile.addVariable(null, "errorHeat", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(errorHeatVar, new Attribute("units", "J"));
-				dataFile.addVariableAttribute(errorHeatVar, new Attribute("long_name", "Internal energy error at each time step."));
+				ETsVar  = dataFile.addVariable(null, "ets", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water."));
+				
+				concentrationICVar  = dataFile.addVariable(null, "concentrationIC", DataType.DOUBLE, "depth");
+				dataFile.addVariableAttribute(concentrationICVar, new Attribute("units", "ML-3"));
+				dataFile.addVariableAttribute(concentrationICVar, new Attribute("long_name", "Initial condition for solute concentration."));
+
+				concentrationsVar  = dataFile.addVariable(null, "concentrations", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(concentrationsVar, new Attribute("units", "ML-3"));
+				dataFile.addVariableAttribute(concentrationsVar, new Attribute("long_name", "Solute concentration in each control volume."));
+				
+				waterVolumeConcentrationsVar  = dataFile.addVariable(null, "waterVolumeConcentrations", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(waterVolumeConcentrationsVar, new Attribute("units", "ML-2"));
+				dataFile.addVariableAttribute(waterVolumeConcentrationsVar, new Attribute("long_name", "waterVolumeSolute concentration in each control volume."));
+				
+				averageSoluteConcentrationVar = dataFile.addVariable(null, "averageSoluteConcentration", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(averageSoluteConcentrationVar, new Attribute("units", "ML-3"));
+				dataFile.addVariableAttribute(averageSoluteConcentrationVar, new Attribute("long_name", "Average solute concentration."));
+				
+				averageWaterVolumeSoluteConcentrationVar = dataFile.addVariable(null, "averageWaterVolumeSoluteConcentration", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(averageWaterVolumeSoluteConcentrationVar, new Attribute("units", "ML-2"));
+				dataFile.addVariableAttribute(averageWaterVolumeSoluteConcentrationVar, new Attribute("long_name", "Average water volume solute concentration."));
+				
+				soluteFluxesVar = dataFile.addVariable(null, "soluteFluxes", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(soluteFluxesVar, new Attribute("units", "")); //?????
+				dataFile.addVariableAttribute(soluteFluxesVar, new Attribute("long_name", "Solute Flux."));
+				
+				dispersionSoluteFluxesVar = dataFile.addVariable(null, "dispersionSoluteFluxes", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(dispersionSoluteFluxesVar, new Attribute("units", ""));  //?????
+				dataFile.addVariableAttribute(dispersionSoluteFluxesVar, new Attribute("long_name", "Dispersion Flux."));
+				
+				advectionSoluteFluxesVar = dataFile.addVariable(null, "advectionSoluteFluxes", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(advectionSoluteFluxesVar, new Attribute("units", ""));  //?????
+				dataFile.addVariableAttribute(advectionSoluteFluxesVar, new Attribute("long_name", "Advection Flux."));
+				
+				errorWaterVolumeConcentrationVar = dataFile.addVariable(null, "errorWaterVolumeConcentration", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(errorWaterVolumeConcentrationVar, new Attribute("units", "")); //?????
+				dataFile.addVariableAttribute(errorWaterVolumeConcentrationVar, new Attribute("long_name", "Water volume concentration error at each time step."));
 				
 				errorVolumeVar = dataFile.addVariable(null, "errorVolume", DataType.DOUBLE, "time");
 				dataFile.addVariableAttribute(errorVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(errorVolumeVar, new Attribute("long_name", "Volume error at each time step."));
 				
-//				topHeatBCVar  = dataFile.addVariable(null, "topBC for heat", DataType.DOUBLE, "time");
-//				dataFile.addVariableAttribute(topHeatBCVar, new Attribute("units", ""));                   //?????
-//				dataFile.addVariableAttribute(topHeatBCVar, new Attribute("long_name", "")); //?????
-//				
-//				bottomHeatBCVar = dataFile.addVariable(null, "bottomHeatBC", DataType.DOUBLE, "time");
-//				dataFile.addVariableAttribute(bottomHeatBCVar, new Attribute("units", ""));                 //?????
-//				dataFile.addVariableAttribute(bottomHeatBCVar, new Attribute("long_name", "")); //?????
-//				
-//				topRichardsBCVar  = dataFile.addVariable(null, "topRichardsBC", DataType.DOUBLE, "time");
-//				dataFile.addVariableAttribute(topRichardsBCVar, new Attribute("units", ""));                   //?????
-//				dataFile.addVariableAttribute(topRichardsBCVar, new Attribute("long_name", "")); //?????
-//				
-//				bottomRichardsBCVar = dataFile.addVariable(null, "bottomRichardsBC", DataType.DOUBLE, "time");
-//				dataFile.addVariableAttribute(bottomRichardsBCVar, new Attribute("units", ""));                 //?????
-//				dataFile.addVariableAttribute(bottomRichardsBCVar, new Attribute("long_name", "")); //?????
-								
 				controlVolumeVar = dataFile.addVariable(null, "controlVolume", DataType.DOUBLE, "depth");
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("long_name", "dimension of each control volumes"));
@@ -365,13 +397,15 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				dualDepth = new ArrayDouble.D1(dualKDim.getLength());
 				dataControlVolume = new ArrayDouble.D1(kDim.getLength());
 				dataPsiIC = new ArrayDouble.D1(kDim.getLength());
-				dataTemperatureIC = new ArrayDouble.D1(kDim.getLength());
+				dataConcentrationIC = new ArrayDouble.D1(kDim.getLength());
+				dataRootIC = new ArrayDouble.D1(kDim.getLength());
 
 				for (int k = 0; k < kDim.getLength(); k++) {
 					depth.set(k, spatialCoordinate[k]);
 					dataControlVolume.set(k, controlVolume[k]);
 					dataPsiIC.set(k, psi[k]);
-					dataTemperatureIC.set(k, temperatureIC[k]);	
+					dataConcentrationIC.set(k, concentrationIC[k]);	
+					dataRootIC.set(k, rootIC[k]);
 				}
 				
 
@@ -385,7 +419,8 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				dataFile.write(dualDepthVar, dualDepth);
 				dataFile.write(controlVolumeVar, dataControlVolume);
 				dataFile.write(psiICVar, dataPsiIC);
-				dataFile.write(temperatureICVar, dataTemperatureIC);
+				dataFile.write(concentrationICVar, dataConcentrationIC);
+				dataFile.write(rootICVar, dataRootIC);
 				stepCreation = 1;
 
 				System.out.println("\n\t***Created NetCDF " + fileNameToSave +"\n\n");
@@ -420,18 +455,24 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 
 				times = Array.factory(DataType.INT, new int[] {NREC});
 
-				dataPsi = new ArrayDouble.D2(NREC, KMAX);
-				dataTemperature = new ArrayDouble.D2(NREC, KMAX);
-				dataTheta = new ArrayDouble.D2(NREC, KMAX);
-				dataHeatFlux = new ArrayDouble.D2(NREC, KMAX);
-				dataDarcyFlux = new ArrayDouble.D2(NREC, DUALKMAX);
-				dataErrorHeat = new ArrayDouble.D1(NREC);
+				dataPsi 	= new ArrayDouble.D2(NREC, KMAX);
+				dataTheta 	= new ArrayDouble.D2(NREC, KMAX);
+				dataETs 	= new ArrayDouble.D2(NREC, KMAX);
+				dataWaterVolume 		= new ArrayDouble.D2(NREC, KMAX);
+				dataDarcyVelocities 	= new ArrayDouble.D2(NREC, DUALKMAX);
+				dataConcentrations 		= new ArrayDouble.D2(NREC, KMAX);
+				dataWaterVolumeConcentrations 	= new ArrayDouble.D2(NREC, KMAX);
+				dataSoluteFluxes 				= new ArrayDouble.D2(NREC, KMAX);
+				dataDispersionSoluteFluxes 		= new ArrayDouble.D2(NREC, KMAX);
+				dataAdvectionSoluteFluxes 		= new ArrayDouble.D2(NREC, KMAX);
+				
 				dataErrorVolume = new ArrayDouble.D1(NREC);
-//				dataTopHeatBC = new ArrayDouble.D1(NREC);
-//				dataBottomHeatBC = new ArrayDouble.D1(NREC);
-//				dataTopRichardsBC = new ArrayDouble.D1(NREC);
-//				dataBottomRichardsBC = new ArrayDouble.D1(NREC);
+				dataErrorWaterVolumeConcentration = new ArrayDouble.D1(NREC);
+				dataAverageSoluteConcentration = new ArrayDouble.D1(NREC);
+				dataAverageWaterVolumeSoluteConcentration = new ArrayDouble.D1(NREC);
+			
 
+				
 				int i=0;
 				it = variables.entrySet().iterator();
 				while (it.hasNext()) {
@@ -458,7 +499,7 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 					tempVariable =  entry.getValue().get(1);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataTemperature.set(i, k, tempVariable[k]);
+						dataTheta.set(i, k, tempVariable[k]);
 
 					}
 
@@ -466,14 +507,14 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 					tempVariable =  entry.getValue().get(2);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataTheta.set(i, k, tempVariable[k]);
+						dataWaterVolume.set(i, k, tempVariable[k]);
 
 					}
 					
 					tempVariable =  entry.getValue().get(3);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataHeatFlux.set(i, k, tempVariable[k]);
+						dataDarcyVelocities.set(i, k, tempVariable[k]);
 
 					}
 					
@@ -481,16 +522,54 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 					tempVariable =  entry.getValue().get(4);
 					for (int k = 0; k < DUALKMAX; k++) {
 
-						dataDarcyFlux.set(i, k, tempVariable[k]);
+						dataETs.set(i, k, tempVariable[k]);
+
+					}
+					
+					tempVariable =  entry.getValue().get(5);
+					for (int k = 0; k < DUALKMAX; k++) {
+
+						dataConcentrations.set(i, k, tempVariable[k]);
+
+					}
+					
+					tempVariable =  entry.getValue().get(6);
+					for (int k = 0; k < DUALKMAX; k++) {
+
+						dataWaterVolumeConcentrations.set(i, k, tempVariable[k]);
+
+					}
+					
+					tempVariable =  entry.getValue().get(7);
+					for (int k = 0; k < DUALKMAX; k++) {
+
+						dataSoluteFluxes.set(i, k, tempVariable[k]);
+
+					}
+					
+					tempVariable =  entry.getValue().get(8);
+					for (int k = 0; k < DUALKMAX; k++) {
+
+						dataDispersionSoluteFluxes.set(i, k, tempVariable[k]);
+
+					}
+					
+					tempVariable =  entry.getValue().get(9);
+					for (int k = 0; k < DUALKMAX; k++) {
+
+						dataAdvectionSoluteFluxes.set(i, k, tempVariable[k]);
 
 					}
 					
 					
-					dataErrorHeat.set(i, entry.getValue().get(5)[0]);
+					dataErrorWaterVolumeConcentration.set(i, entry.getValue().get(10)[0]);
 
-					dataErrorVolume.set(i, entry.getValue().get(6)[0]);
+					dataErrorVolume.set(i, entry.getValue().get(11)[0]);
+					
+					dataAverageSoluteConcentration.set(i, entry.getValue().get(12)[0]);
+					
+					dataAverageWaterVolumeSoluteConcentration.set(i, entry.getValue().get(13)[0]);
 
-//					dataBottomBC.set(i, entry.getValue().get(6)[0]);
 
 
 					i++;
@@ -507,15 +586,22 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				//				dataFile.write(kIndexVar, kIndex);
 				dataFile.write(dataFile.findVariable("time"), time_origin, times);
 				dataFile.write(dataFile.findVariable("psi"), origin, dataPsi);
-				dataFile.write(dataFile.findVariable("T"), origin, dataTemperature);
 				dataFile.write(dataFile.findVariable("theta"), origin, dataTheta);
-				dataFile.write(dataFile.findVariable("heatFlux"), origin, dataHeatFlux);
-				dataFile.write(dataFile.findVariable("darcyFlux"), origin, dataDarcyFlux);
+				dataFile.write(dataFile.findVariable("waterVolume"), origin, dataWaterVolume);
+				dataFile.write(dataFile.findVariable("darcyVelocity"), origin, dataDarcyVelocities);		
+				dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
+				
+				dataFile.write(dataFile.findVariable("concentration"), origin, dataConcentrations);
+				dataFile.write(dataFile.findVariable("waterVolumeConcentration"), origin, dataWaterVolumeConcentrations);
+				dataFile.write(dataFile.findVariable("soluteFlux"), origin, dataSoluteFluxes);
+				dataFile.write(dataFile.findVariable("dispersionFlux"), origin, dataDispersionSoluteFluxes);
+				dataFile.write(dataFile.findVariable("advectionFlux"), origin, dataAdvectionSoluteFluxes);
+				
 
-				dataFile.write(dataFile.findVariable("errorHeat"), time_origin, dataErrorHeat);
+				dataFile.write(dataFile.findVariable("errorWaterVolumeConcentration"), time_origin, dataErrorWaterVolumeConcentration);
 				dataFile.write(dataFile.findVariable("errorVolume"), time_origin, dataErrorVolume);
-//				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
-//				dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);
+				dataFile.write(dataFile.findVariable("averageSoluteConcentration"), time_origin, dataAverageSoluteConcentration);
+				dataFile.write(dataFile.findVariable("averageWaterVolumeSoluteConcentration"), time_origin, dataAverageWaterVolumeSoluteConcentration);
 
 				origin_counter = origin_counter + NREC;
 				
