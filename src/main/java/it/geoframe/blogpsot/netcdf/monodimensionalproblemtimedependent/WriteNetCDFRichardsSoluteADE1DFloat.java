@@ -61,7 +61,7 @@ import ucar.nc2.Variable;
 @License("General Public License Version 3 (GPLv3)")
 
 
-public class WriteNetCDFSoluteAdvectionDispersion1D {
+public class WriteNetCDFRichardsSoluteADE1DFloat {
 
 	@Description()
 	@In
@@ -102,11 +102,6 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 	@In
 	@Unit ()
 	public double[] concentrationIC;
-	
-	@Description("Initial condition for root profile.")
-	@In
-	@Unit ()
-	public double[] rootIC;
 	
 	@In
 	public int writeFrequency = 1;
@@ -198,7 +193,6 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 	Variable dualDepthVar;
 	Variable psiVar;
 	Variable psiICVar;
-	Variable rootICVar;
 	Variable thetaVar;
 	Variable waterVolumeVar;
 	Variable darcyVelocitiesVar;
@@ -316,79 +310,76 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				dataFile.addVariableAttribute(dualDepthVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(dualDepthVar, new Attribute("long_name", "Dual soil depth."));
 
+				
 				// Define the netCDF variables and their attributes.
 				String dims = "time depth";
 				String dualDims = "time dualDepth";
 
-				psiICVar = dataFile.addVariable(null, "psiIC", DataType.DOUBLE, "depth");
+				psiICVar = dataFile.addVariable(null, "psiIC", DataType.FLOAT, "depth");
 				dataFile.addVariableAttribute(psiICVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiICVar, new Attribute("long_name", "Initial condition for water suction."));
 				
-				psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
+				psiVar = dataFile.addVariable(null, "psi", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(psiVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiVar, new Attribute("long_name", "Water suction."));
-				
-				rootICVar = dataFile.addVariable(null, "rootIC", DataType.DOUBLE, "depth");
-				dataFile.addVariableAttribute(rootICVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(rootICVar, new Attribute("long_name", "Initial condition for root depth."));
-
-				thetaVar = dataFile.addVariable(null, "theta", DataType.DOUBLE, dims);
+			
+				thetaVar = dataFile.addVariable(null, "theta", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(thetaVar, new Attribute("units", " "));
 				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "theta for within soil and water depth."));
 				
-				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
+				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("long_name", "Water volume in each control volume"));
 
-				darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocity", DataType.DOUBLE, dualDims);
+				darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocity", DataType.FLOAT, dualDims);
 				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("units", "m s-1"));
 				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("long_name", "Darcy flux."));
 				
-				ETsVar  = dataFile.addVariable(null, "ets", DataType.DOUBLE, dims);
+				ETsVar  = dataFile.addVariable(null, "ets", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water."));
 				
-				concentrationICVar  = dataFile.addVariable(null, "concentrationIC", DataType.DOUBLE, "depth");
+				concentrationICVar  = dataFile.addVariable(null, "concentrationIC", DataType.FLOAT, "depth");
 				dataFile.addVariableAttribute(concentrationICVar, new Attribute("units", "ML-3"));
 				dataFile.addVariableAttribute(concentrationICVar, new Attribute("long_name", "Initial condition for solute concentration."));
 
-				concentrationsVar  = dataFile.addVariable(null, "concentrations", DataType.DOUBLE, dims);
+				concentrationsVar  = dataFile.addVariable(null, "concentrations", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(concentrationsVar, new Attribute("units", "ML-3"));
 				dataFile.addVariableAttribute(concentrationsVar, new Attribute("long_name", "Solute concentration in each control volume."));
 				
-				waterVolumeConcentrationsVar  = dataFile.addVariable(null, "waterVolumeConcentrations", DataType.DOUBLE, dims);
+				waterVolumeConcentrationsVar  = dataFile.addVariable(null, "waterVolumeConcentrations", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(waterVolumeConcentrationsVar, new Attribute("units", "ML-2"));
 				dataFile.addVariableAttribute(waterVolumeConcentrationsVar, new Attribute("long_name", "waterVolumeSolute concentration in each control volume."));
 				
-				averageSoluteConcentrationVar = dataFile.addVariable(null, "averageSoluteConcentration", DataType.DOUBLE, "time");
+				averageSoluteConcentrationVar = dataFile.addVariable(null, "averageSoluteConcentration", DataType.FLOAT, "time");
 				dataFile.addVariableAttribute(averageSoluteConcentrationVar, new Attribute("units", "ML-3"));
 				dataFile.addVariableAttribute(averageSoluteConcentrationVar, new Attribute("long_name", "Average solute concentration."));
 				
-				averageWaterVolumeSoluteConcentrationVar = dataFile.addVariable(null, "averageWaterVolumeSoluteConcentration", DataType.DOUBLE, "time");
+				averageWaterVolumeSoluteConcentrationVar = dataFile.addVariable(null, "averageWaterVolumeSoluteConcentration", DataType.FLOAT, "time");
 				dataFile.addVariableAttribute(averageWaterVolumeSoluteConcentrationVar, new Attribute("units", "ML-2"));
 				dataFile.addVariableAttribute(averageWaterVolumeSoluteConcentrationVar, new Attribute("long_name", "Average water volume solute concentration."));
 				
-				soluteFluxesVar = dataFile.addVariable(null, "soluteFluxes", DataType.DOUBLE, dualDims);
+				soluteFluxesVar = dataFile.addVariable(null, "soluteFluxes", DataType.FLOAT, dualDims);
 				dataFile.addVariableAttribute(soluteFluxesVar, new Attribute("units", "")); //?????
 				dataFile.addVariableAttribute(soluteFluxesVar, new Attribute("long_name", "Solute Flux."));
 				
-				dispersionSoluteFluxesVar = dataFile.addVariable(null, "dispersionSoluteFluxes", DataType.DOUBLE, dualDims);
+				dispersionSoluteFluxesVar = dataFile.addVariable(null, "dispersionSoluteFluxes", DataType.FLOAT, dualDims);
 				dataFile.addVariableAttribute(dispersionSoluteFluxesVar, new Attribute("units", ""));  //?????
 				dataFile.addVariableAttribute(dispersionSoluteFluxesVar, new Attribute("long_name", "Dispersion Flux."));
 				
-				advectionSoluteFluxesVar = dataFile.addVariable(null, "advectionSoluteFluxes", DataType.DOUBLE, dualDims);
+				advectionSoluteFluxesVar = dataFile.addVariable(null, "advectionSoluteFluxes", DataType.FLOAT, dualDims);
 				dataFile.addVariableAttribute(advectionSoluteFluxesVar, new Attribute("units", ""));  //?????
 				dataFile.addVariableAttribute(advectionSoluteFluxesVar, new Attribute("long_name", "Advection Flux."));
 				
-				errorWaterVolumeConcentrationVar = dataFile.addVariable(null, "errorWaterVolumeConcentration", DataType.DOUBLE, "time");
+				errorWaterVolumeConcentrationVar = dataFile.addVariable(null, "errorWaterVolumeConcentration", DataType.FLOAT, "time");
 				dataFile.addVariableAttribute(errorWaterVolumeConcentrationVar, new Attribute("units", "")); //?????
 				dataFile.addVariableAttribute(errorWaterVolumeConcentrationVar, new Attribute("long_name", "Water volume concentration error at each time step."));
 				
-				errorVolumeVar = dataFile.addVariable(null, "errorVolume", DataType.DOUBLE, "time");
+				errorVolumeVar = dataFile.addVariable(null, "errorVolume", DataType.FLOAT, "time");
 				dataFile.addVariableAttribute(errorVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(errorVolumeVar, new Attribute("long_name", "Volume error at each time step."));
 				
-				controlVolumeVar = dataFile.addVariable(null, "controlVolume", DataType.DOUBLE, "depth");
+				controlVolumeVar = dataFile.addVariable(null, "controlVolume", DataType.FLOAT, "depth");
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("long_name", "dimension of each control volumes"));
 
@@ -405,7 +396,6 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 					dataControlVolume.set(k, controlVolume[k]);
 					dataPsiIC.set(k, psi[k]);
 					dataConcentrationIC.set(k, concentrationIC[k]);	
-					dataRootIC.set(k, rootIC[k]);
 				}
 				
 
@@ -420,7 +410,6 @@ public class WriteNetCDFSoluteAdvectionDispersion1D {
 				dataFile.write(controlVolumeVar, dataControlVolume);
 				dataFile.write(psiICVar, dataPsiIC);
 				dataFile.write(concentrationICVar, dataConcentrationIC);
-				dataFile.write(rootICVar, dataRootIC);
 				stepCreation = 1;
 
 				System.out.println("\n\t***Created NetCDF " + fileNameToSave +"\n\n");
