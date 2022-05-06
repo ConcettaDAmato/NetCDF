@@ -50,7 +50,7 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.Variable;
 
-@Description("This class writes a NetCDF with Richards' equation outputs. Before writing, outputs are stored in a buffer writer"
+@Description("This class writes a NetCDF with GEOSPACE outputs. Before writing, outputs are stored in a buffer writer"
 		+ " and as simulation is ended they are written in a NetCDF file.")
 @Documentation("")
 @Author(name = "Niccolo' Tubini, Riccardo Rigon", contact = "tubini.niccolo@gmail.com")
@@ -76,7 +76,7 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	@Description()
 	@In
 	@Unit ()
-	public LinkedHashMap<String,ArrayList<double[]>> variables; // consider the opportunity to save varibale as float instead of double
+	public LinkedHashMap<String,ArrayList<double[]>> variables;
 
 	@Description()
 	@In
