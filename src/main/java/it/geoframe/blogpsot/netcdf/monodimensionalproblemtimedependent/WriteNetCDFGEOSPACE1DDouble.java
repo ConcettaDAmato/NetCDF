@@ -202,6 +202,12 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	Variable runOffVar;
 	Variable controlVolumeVar;
 	Variable waterVolumeVar;
+	Variable stressWatersVar;
+	Variable stressWaterVar;
+	Variable evaporationStressWaterVar;
+	Variable stressSunVar;
+	Variable stressShadeVar;
+	Variable stressedETsVar;
 
 	ArrayDouble.D1 dataPsiIC;
 	ArrayDouble.D1 dataTemperature;
@@ -211,6 +217,10 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	ArrayDouble.D1 dataBottomBC;
 	ArrayDouble.D1 dataRunOff;
 	ArrayDouble.D1 dataControlVolume;
+	ArrayDouble.D1 dataStressWater;
+	ArrayDouble.D1 dataEvaporationStressWater;
+	ArrayDouble.D1 dataStressSun;
+	ArrayDouble.D1 dataStressShade;
 	
 	ArrayDouble.D2 dataPsi;
 	ArrayDouble.D2 dataTheta;
@@ -222,8 +232,10 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	ArrayDouble.D2 dataKinematicRatio;
 	ArrayDouble.D2 dataETs;
 	ArrayDouble.D2 dataWaterVolume;
+	ArrayDouble.D2 dataStressWaters; //stress water for each control volume 
+	ArrayDouble.D2 dataStressedETs; 
 
-
+	
 	int step = 0;
 	int stepCreation = 0;
 
@@ -356,7 +368,33 @@ public class WriteNetCDFGEOSPACE1DDouble {
 
 				ETsVar  = dataFile.addVariable(null, "ets", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water"));
+				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water in Richards"));
+				
+				stressWatersVar  = dataFile.addVariable(null, "StressWaters", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(stressWatersVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(stressWatersVar, new Attribute("long_name", "water stress in each control volume"));
+				
+				stressWaterVar  = dataFile.addVariable(null, "StressWater", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(stressWaterVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(stressWaterVar, new Attribute("long_name", "water stress"));
+				
+				evaporationStressWaterVar  = dataFile.addVariable(null, "EvaporationStressWater", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(evaporationStressWaterVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(evaporationStressWaterVar, new Attribute("long_name", "evaporation Stress Water"));
+				
+				stressSunVar  = dataFile.addVariable(null, "StressSun", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(stressSunVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(stressSunVar, new Attribute("long_name", "total stressSun"));
+				
+				stressShadeVar  = dataFile.addVariable(null, "StressShade", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(stressShadeVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(stressShadeVar, new Attribute("long_name", "total stressShade"));
+				
+				stressedETsVar  = dataFile.addVariable(null, "StressedETs", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(stressedETsVar, new Attribute("units", "mm"));
+				dataFile.addVariableAttribute(stressedETsVar, new Attribute("long_name", "Transpired stressed water from BrokerGEO"));
+				
+				
 				
 				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
@@ -457,6 +495,16 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataTopBC = new ArrayDouble.D1(NREC);
 				dataBottomBC = new ArrayDouble.D1(NREC);
 				dataRunOff = new ArrayDouble.D1(NREC);
+				
+				dataStressWaters = new ArrayDouble.D2(NREC, KMAX); 
+				dataStressedETs = new ArrayDouble.D2(NREC, KMAX); 
+				
+				dataStressWater = new ArrayDouble.D1(NREC);
+				dataEvaporationStressWater = new ArrayDouble.D1(NREC);
+				dataStressSun = new ArrayDouble.D1(NREC);
+				dataStressShade = new ArrayDouble.D1(NREC);
+				
+
 
 
 				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
@@ -592,6 +640,28 @@ public class WriteNetCDFGEOSPACE1DDouble {
 					dataBottomBC.set(i, entry.getValue().get(12)[0]);
 
 					dataRunOff.set(i, entry.getValue().get(13)[0]);
+					
+					
+					tempVariable =  entry.getValue().get(14);
+					for (int k = 0; k < KMAX-1; k++) {
+
+						dataStressWaters.set(i, k, tempVariable[k]);}
+					
+					dataStressWater.set(i, entry.getValue().get(15)[0]);
+					dataEvaporationStressWater.set(i, entry.getValue().get(16)[0]);
+					dataStressSun.set(i, entry.getValue().get(17)[0]);
+					dataStressShade.set(i, entry.getValue().get(18)[0]);
+					
+					tempVariable =  entry.getValue().get(19);
+					for (int k = 0; k < KMAX-1; k++) {
+
+						dataStressedETs.set(i, k, tempVariable[k]);}
+					
+				
+					
+					
+					
+				
 
 					i++;
 				}				
@@ -636,6 +706,14 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				
 				dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
 				
+				dataFile.write(dataFile.findVariable("StressWaters"), origin, dataStressWaters);
+				dataFile.write(dataFile.findVariable("StressedETs"), origin, dataStressedETs);
+				
+				dataFile.write(dataFile.findVariable("StressWater"), time_origin, dataStressWater);
+				dataFile.write(dataFile.findVariable("EvaporationStressWater"), time_origin, dataEvaporationStressWater);
+				dataFile.write(dataFile.findVariable("StressSun"), time_origin, dataStressSun);
+				dataFile.write(dataFile.findVariable("StressShade"), time_origin, dataStressShade);
+
 				dataFile.write(dataFile.findVariable("error"), time_origin, dataError);
 				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
 				dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);
