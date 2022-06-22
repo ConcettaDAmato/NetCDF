@@ -44,13 +44,13 @@ import ucar.ma2.Array;
 import ucar.ma2.ArrayDouble;
 import ucar.ma2.DataType;
 import ucar.ma2.InvalidRangeException;
-import ucar.ma2.ArrayFloat;
+import ucar.ma2.ArrayDouble.D1;
 import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.Variable;
 
-@Description("This class writes a NetCDF with Richards' equation outputs. Before writing, outputs are stored in a buffer writer"
+@Description("This class writes a NetCDF with GEOSPACE outputs. Before writing, outputs are stored in a buffer writer"
 		+ " and as simulation is ended they are written in a NetCDF file.")
 @Documentation("")
 @Author(name = "Niccolo' Tubini, Riccardo Rigon", contact = "tubini.niccolo@gmail.com")
@@ -61,7 +61,7 @@ import ucar.nc2.Variable;
 @License("General Public License Version 3 (GPLv3)")
 
 
-public class WriteNetCDFRichardsLysimeter1DFloat {
+public class WriteNetCDFGEOSPACE1DFloat {
 
 	@Description()
 	@In
@@ -76,7 +76,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 	@Description()
 	@In
 	@Unit ()
-	public LinkedHashMap<String,ArrayList<double[]>> variables; // consider the opportunity to save varibale as float instead of double
+	public LinkedHashMap<String,ArrayList<double[]>> variables;
 
 	@Description()
 	@In
@@ -102,6 +102,11 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 	@In
 	@Unit ()
 	public double[] temperature;
+	
+	@Description("Initial condition for root profile.")
+	@In
+	@Unit ()
+	public double[] rootIC;
 	
 	@In
 	public int writeFrequency = 1;
@@ -170,8 +175,8 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 	Dimension kDim;
 	Dimension dualKDim;
 	Dimension timeDim;
-	ArrayDouble.D1 depth;
-	ArrayDouble.D1 dualDepth;
+	D1 depth;
+	D1 dualDepth;
 	Array times;
 	String dims;
 	List<String> outVariablesList;
@@ -181,6 +186,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 	Variable dualDepthVar;
 	Variable psiVar;
 	Variable psiICVar;
+	Variable rootICVar;
 	Variable temperatureVar;
 	Variable thetaVar;
 	Variable darcyVelocitiesVar;
@@ -196,27 +202,40 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 	Variable runOffVar;
 	Variable controlVolumeVar;
 	Variable waterVolumeVar;
+	Variable stressWatersVar;
+	Variable stressWaterVar;
+	Variable evaporationStressWaterVar;
+	Variable stressSunVar;
+	Variable stressShadeVar;
+	Variable stressedETsVar;
 
-	ArrayFloat.D1 dataPsiIC;
-	ArrayFloat.D1 dataTemperature;
-	ArrayFloat.D1 dataError;
-	ArrayFloat.D1 dataTopBC;
-	ArrayFloat.D1 dataBottomBC;
-	ArrayFloat.D1 dataRunOff;
+	ArrayDouble.D1 dataPsiIC;
+	ArrayDouble.D1 dataTemperature;
+	ArrayDouble.D1 dataRootIC;
+	ArrayDouble.D1 dataError;
+	ArrayDouble.D1 dataTopBC;
+	ArrayDouble.D1 dataBottomBC;
+	ArrayDouble.D1 dataRunOff;
 	ArrayDouble.D1 dataControlVolume;
+	ArrayDouble.D1 dataStressWater;
+	ArrayDouble.D1 dataEvaporationStressWater;
+	ArrayDouble.D1 dataStressSun;
+	ArrayDouble.D1 dataStressShade;
 	
-	ArrayFloat.D2 dataPsi;
-	ArrayFloat.D2 dataTheta;
-	ArrayFloat.D2 dataDarcyVelocities;
-	ArrayFloat.D2 dataDarcyVelocitiesCapillary;
-	ArrayFloat.D2 dataDarcyVelocitiesGravity;
-	ArrayFloat.D2 dataPoreVelocities;
-	ArrayFloat.D2 dataCelerity;
-	ArrayFloat.D2 dataKinematicRatio;
-	ArrayFloat.D2 dataETs;
-	ArrayFloat.D2 dataWaterVolume;
+	ArrayDouble.D2 dataPsi;
+	ArrayDouble.D2 dataTheta;
+	ArrayDouble.D2 dataDarcyVelocities;
+	ArrayDouble.D2 dataDarcyVelocitiesCapillary;
+	ArrayDouble.D2 dataDarcyVelocitiesGravity;
+	ArrayDouble.D2 dataPoreVelocities;
+	ArrayDouble.D2 dataCelerity;
+	ArrayDouble.D2 dataKinematicRatio;
+	ArrayDouble.D2 dataETs;
+	ArrayDouble.D2 dataWaterVolume;
+	ArrayDouble.D2 dataStressWaters; //stress water for each control volume 
+	ArrayDouble.D2 dataStressedETs; 
 
-
+	
 	int step = 0;
 	int stepCreation = 0;
 
@@ -298,6 +317,11 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 				dataFile.addVariableAttribute(psiICVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiICVar, new Attribute("long_name", "Initial condition for water suction."));
 				
+				rootICVar = dataFile.addVariable(null, "rootIC", DataType.FLOAT, "depth");
+				dataFile.addVariableAttribute(rootICVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(rootICVar, new Attribute("long_name", "Initial condition for root depth."));
+
+				
 				temperatureVar = dataFile.addVariable(null, "T", DataType.FLOAT, "depth");
 				dataFile.addVariableAttribute(temperatureVar, new Attribute("units", "K"));
 				dataFile.addVariableAttribute(temperatureVar, new Attribute("long_name", "Temperature."));
@@ -344,7 +368,33 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 
 				ETsVar  = dataFile.addVariable(null, "ets", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water"));
+				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water in Richards"));
+				
+				stressWatersVar  = dataFile.addVariable(null, "StressWaters", DataType.FLOAT, dims);
+				dataFile.addVariableAttribute(stressWatersVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(stressWatersVar, new Attribute("long_name", "water stress in each control volume"));
+				
+				stressWaterVar  = dataFile.addVariable(null, "StressWater", DataType.FLOAT, "time");
+				dataFile.addVariableAttribute(stressWaterVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(stressWaterVar, new Attribute("long_name", "water stress"));
+				
+				evaporationStressWaterVar  = dataFile.addVariable(null, "EvaporationStressWater", DataType.FLOAT, "time");
+				dataFile.addVariableAttribute(evaporationStressWaterVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(evaporationStressWaterVar, new Attribute("long_name", "evaporation Stress Water"));
+				
+				stressSunVar  = dataFile.addVariable(null, "StressSun", DataType.FLOAT, "time");
+				dataFile.addVariableAttribute(stressSunVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(stressSunVar, new Attribute("long_name", "total stressSun"));
+				
+				stressShadeVar  = dataFile.addVariable(null, "StressShade", DataType.FLOAT, "time");
+				dataFile.addVariableAttribute(stressShadeVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(stressShadeVar, new Attribute("long_name", "total stressShade"));
+				
+				stressedETsVar  = dataFile.addVariable(null, "StressedETs", DataType.FLOAT, dims);
+				dataFile.addVariableAttribute(stressedETsVar, new Attribute("units", "mm"));
+				dataFile.addVariableAttribute(stressedETsVar, new Attribute("long_name", "Transpired stressed water from BrokerGEO"));
+				
+				
 				
 				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.FLOAT, dims);
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
@@ -375,14 +425,16 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 				depth = new ArrayDouble.D1(kDim.getLength());
 				dualDepth = new ArrayDouble.D1(dualKDim.getLength());
 				dataControlVolume = new ArrayDouble.D1(kDim.getLength());
-				dataPsiIC = new ArrayFloat.D1(kDim.getLength());
-				dataTemperature = new ArrayFloat.D1(kDim.getLength());
+				dataPsiIC = new ArrayDouble.D1(kDim.getLength());
+				dataTemperature = new ArrayDouble.D1(kDim.getLength());
+				dataRootIC = new ArrayDouble.D1(kDim.getLength());  // queste sono quelle che non cambiano nel tempo
 
 				for (int k = 0; k < kDim.getLength(); k++) {
 					depth.set(k, spatialCoordinate[k]);
 					dataControlVolume.set(k, controlVolume[k]);
-					dataPsiIC.set(k, (float) psiIC[k]);
-					dataTemperature.set(k, (float) temperature[k]);	
+					dataPsiIC.set(k, psiIC[k]);
+					dataTemperature.set(k, temperature[k]);
+					dataRootIC.set(k, rootIC[k]);
 				}
 				
 				for (int k = 0; k < kDim.getLength()-1; k++) {
@@ -399,6 +451,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 				dataFile.write(dualDepthVar, dualDepth);
 				dataFile.write(controlVolumeVar, dataControlVolume);
 				dataFile.write(psiICVar, dataPsiIC);
+				dataFile.write(rootICVar, dataRootIC);
 				dataFile.write(temperatureVar, dataTemperature);
 				stepCreation = 1;
 
@@ -434,38 +487,48 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 
 				times = Array.factory(DataType.INT, new int[] {NREC});
 
-				dataPsi = new ArrayFloat.D2(NREC, KMAX);
-				dataTheta = new ArrayFloat.D2(NREC, KMAX);
-				dataETs = new ArrayFloat.D2(NREC, KMAX);
-				dataWaterVolume = new ArrayFloat.D2(NREC, KMAX);
-				dataError = new ArrayFloat.D1(NREC);
-				dataTopBC = new ArrayFloat.D1(NREC);
-				dataBottomBC = new ArrayFloat.D1(NREC);
-				dataRunOff = new ArrayFloat.D1(NREC);
+				dataPsi = new ArrayDouble.D2(NREC, KMAX); // aggiungere le mie variabili a matrici 
+				dataTheta = new ArrayDouble.D2(NREC, KMAX);
+				dataETs = new ArrayDouble.D2(NREC, KMAX);
+				dataWaterVolume = new ArrayDouble.D2(NREC, KMAX);
+				dataError = new ArrayDouble.D1(NREC); // aggiungere le mie variabili a vettori 
+				dataTopBC = new ArrayDouble.D1(NREC);
+				dataBottomBC = new ArrayDouble.D1(NREC);
+				dataRunOff = new ArrayDouble.D1(NREC);
+				
+				dataStressWaters = new ArrayDouble.D2(NREC, KMAX); 
+				dataStressedETs = new ArrayDouble.D2(NREC, KMAX); 
+				
+				dataStressWater = new ArrayDouble.D1(NREC);
+				dataEvaporationStressWater = new ArrayDouble.D1(NREC);
+				dataStressSun = new ArrayDouble.D1(NREC);
+				dataStressShade = new ArrayDouble.D1(NREC);
+				
+
 
 
 				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					dataDarcyVelocities = new ArrayFloat.D2(NREC, KMAX);
+					dataDarcyVelocities = new ArrayDouble.D2(NREC, KMAX);
 				}
 				
 				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					dataDarcyVelocitiesCapillary = new ArrayFloat.D2(NREC, KMAX);
+					dataDarcyVelocitiesCapillary = new ArrayDouble.D2(NREC, KMAX);
 				}
 				
 				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					dataDarcyVelocitiesGravity = new ArrayFloat.D2(NREC, KMAX);
+					dataDarcyVelocitiesGravity = new ArrayDouble.D2(NREC, KMAX);
 				}
 				
 				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					dataPoreVelocities = new ArrayFloat.D2(NREC, KMAX);
+					dataPoreVelocities = new ArrayDouble.D2(NREC, KMAX);
 				}
 				
 				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					dataCelerity = new ArrayFloat.D2(NREC, KMAX);
+					dataCelerity = new ArrayDouble.D2(NREC, KMAX);
 				}
 				
 				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					dataKinematicRatio = new ArrayFloat.D2(NREC, KMAX);
+					dataKinematicRatio = new ArrayDouble.D2(NREC, KMAX);
 				}		
 				
 
@@ -490,7 +553,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 					tempVariable =  entry.getValue().get(0);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataPsi.set(i, k, (float) tempVariable[k]);
+						dataPsi.set(i, k, tempVariable[k]);
 
 					}
 
@@ -498,14 +561,14 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 					tempVariable =  entry.getValue().get(1);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataTheta.set(i, k,(float) tempVariable[k]);
+						dataTheta.set(i, k, tempVariable[k]);
 
 					}
 					
 					tempVariable =  entry.getValue().get(2);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataWaterVolume.set(i, k, (float) tempVariable[k]);
+						dataWaterVolume.set(i, k, tempVariable[k]);
 
 					}
 					
@@ -513,7 +576,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 						tempVariable =  entry.getValue().get(3);
 						for (int k = 0; k < DUALKMAX; k++) {
 
-							dataDarcyVelocities.set(i, k, (float) tempVariable[k]);
+							dataDarcyVelocities.set(i, k, tempVariable[k]);
 
 						}
 					}
@@ -522,7 +585,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 						tempVariable =  entry.getValue().get(4);
 						for (int k = 0; k < DUALKMAX; k++) {
 
-							dataDarcyVelocitiesCapillary.set(i, k, (float) tempVariable[k]);
+							dataDarcyVelocitiesCapillary.set(i, k, tempVariable[k]);
 
 						}
 					}
@@ -531,7 +594,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 						tempVariable =  entry.getValue().get(5);
 						for (int k = 0; k < DUALKMAX; k++) {
 
-							dataDarcyVelocitiesGravity.set(i, k, (float) tempVariable[k]);
+							dataDarcyVelocitiesGravity.set(i, k, tempVariable[k]);
 
 						}
 					}
@@ -540,7 +603,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 						tempVariable =  entry.getValue().get(6);
 						for (int k = 0; k < DUALKMAX; k++) {
 
-							dataPoreVelocities.set(i, k, (float) tempVariable[k]);
+							dataPoreVelocities.set(i,k, tempVariable[k]);
 
 						}
 					}
@@ -549,7 +612,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 						tempVariable =  entry.getValue().get(7);
 						for (int k = 0; k < DUALKMAX; k++) {
 
-							dataCelerity.set(i, k, (float) tempVariable[k]);
+							dataCelerity.set(i,k, tempVariable[k]);
 
 						}
 					}
@@ -558,7 +621,7 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 						tempVariable =  entry.getValue().get(8);
 						for (int k = 0; k < DUALKMAX; k++) {
 
-							dataKinematicRatio.set(i, k, (float) tempVariable[k]);
+							dataKinematicRatio.set(i,k, tempVariable[k]);
 
 						}
 					}
@@ -566,17 +629,39 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 					tempVariable =  entry.getValue().get(9);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataETs.set(i, k, (float) tempVariable[k]);
+						dataETs.set(i,k, tempVariable[k]);
 
 					}
 
-					dataError.set(i, (float) entry.getValue().get(10)[0]);
+					dataError.set(i, entry.getValue().get(10)[0]);
 
-					dataTopBC.set(i, (float) entry.getValue().get(11)[0]);
+					dataTopBC.set(i, entry.getValue().get(11)[0]);
 
-					dataBottomBC.set(i, (float) entry.getValue().get(12)[0]);
+					dataBottomBC.set(i, entry.getValue().get(12)[0]);
 
-					dataRunOff.set(i, (float) entry.getValue().get(13)[0]);
+					dataRunOff.set(i, entry.getValue().get(13)[0]);
+					
+					
+					tempVariable =  entry.getValue().get(14);
+					for (int k = 0; k < KMAX-1; k++) {
+
+						dataStressWaters.set(i, k, tempVariable[k]);}
+					
+					dataStressWater.set(i, entry.getValue().get(15)[0]);
+					dataEvaporationStressWater.set(i, entry.getValue().get(16)[0]);
+					dataStressSun.set(i, entry.getValue().get(17)[0]);
+					dataStressShade.set(i, entry.getValue().get(18)[0]);
+					
+					tempVariable =  entry.getValue().get(19);
+					for (int k = 0; k < KMAX-1; k++) {
+
+						dataStressedETs.set(i, k, tempVariable[k]);}
+					
+				
+					
+					
+					
+				
 
 					i++;
 				}				
@@ -621,7 +706,14 @@ public class WriteNetCDFRichardsLysimeter1DFloat {
 				
 				dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
 				
+				dataFile.write(dataFile.findVariable("StressWaters"), origin, dataStressWaters);
+				dataFile.write(dataFile.findVariable("StressedETs"), origin, dataStressedETs);
 				
+				dataFile.write(dataFile.findVariable("StressWater"), time_origin, dataStressWater);
+				dataFile.write(dataFile.findVariable("EvaporationStressWater"), time_origin, dataEvaporationStressWater);
+				dataFile.write(dataFile.findVariable("StressSun"), time_origin, dataStressSun);
+				dataFile.write(dataFile.findVariable("StressShade"), time_origin, dataStressShade);
+
 				dataFile.write(dataFile.findVariable("error"), time_origin, dataError);
 				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
 				dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);

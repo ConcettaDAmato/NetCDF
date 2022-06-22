@@ -50,18 +50,18 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.Variable;
 
-@Description("This class writes a NetCDF with Richards' equation outputs. Before writing, outputs are stored in a buffer writer"
-		+ " and as simulation is ended they are written in a NetCDF file.")
+@Description("This class writes a NetCDF with Richards solute advection-dispersion equation outputs. Before writing, outputs are stored in a buffer writer"
+		+ " and as simulation is ended they are written in a NetCDF file as double type.")
 @Documentation("")
-@Author(name = "Niccolo' Tubini, Riccardo Rigon", contact = "tubini.niccolo@gmail.com")
-@Keywords("Hydrology, Richards, Infiltration")
+@Author(name = "Concetta D'Amato, Niccolo' Tubini, Riccardo Rigon", contact = "concettadamato94@gmail.com")
+@Keywords("Hydrology, solute transport equation, advection-dispersion")
 //@Label(JGTConstants.HYDROGEOMORPHOLOGY)
 //@Name("shortradbal")
 //@Status(Status.CERTIFIED)
 @License("General Public License Version 3 (GPLv3)")
 
 
-public class WriteNetCDFRichardsLysimeter1DDouble {
+public class WriteNetCDFRichardsSoluteADE1DDouble {
 
 	@Description()
 	@In
@@ -93,15 +93,15 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 	@Unit ()
 	public double[] controlVolume;
 	
-	@Description("Initial condition for water suction.")
+	@Description("Water suction profile.")
 	@In
 	@Unit ()
-	public double[] psiIC;
+	public double[] psi;
 	
-	@Description("Temperature profile.")
+	@Description("Initial condition for concentration profile.")
 	@In
 	@Unit ()
-	public double[] temperature;
+	public double[] concentrationIC;
 	
 	@In
 	public int writeFrequency = 1;
@@ -116,13 +116,21 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 	@Unit ()
 	public String briefDescritpion;
 	@In
-	public String topBC = " ";
+	public String topSoluteBC = " ";
 	@In
-	public String bottomBC = " ";
+	public String bottomSoluteBC = " ";
+	
+	public String topRichardsBC = " ";
 	@In
-	public String pathTopBC = " ";
+	public String bottomRichardsBC = " ";
 	@In
-	public String pathBottomBC = " ";
+	public String pathSoluteTopBC = " ";
+	@In
+	public String pathSoluteBottomBC = " ";
+	@In
+	public String pathRichardsTopBC = " ";
+	@In
+	public String pathRichardsBottomBC = " ";
 	@In
 	public String pathGrid = " ";
 	@In
@@ -132,7 +140,11 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 	@In
 	public String soilHydraulicConductivityModel = " ";
 	@In
-	public String interfaceConductivityModel = " ";
+	public String interfaceHydraulicConductivityModel = " ";
+	//@In
+	//public String soilThermalConductivityModel = " ";
+	@In
+	public String interfaceDispersionCoefficientModel = " ";
 
 
 	@Description("Boolean variable to print output file only at the end of the simulation")
@@ -181,40 +193,46 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 	Variable dualDepthVar;
 	Variable psiVar;
 	Variable psiICVar;
-	Variable temperatureVar;
 	Variable thetaVar;
-	Variable darcyVelocitiesVar;
-	Variable darcyVelocitiesCapillaryVar;
-	Variable darcyVelocitiesGravityVar;
-	Variable poreVelocitiesVar;
-	Variable celerityVar;
-	Variable kinematicRatioVar;
-	Variable ETsVar; // i.e. transpired stressed water
-	Variable errorVar;
-	Variable topBCVar;
-	Variable bottomBCVar;
-	Variable runOffVar;
-	Variable controlVolumeVar;
 	Variable waterVolumeVar;
+	Variable darcyVelocitiesVar;
+	//Variable ETsVar;
+	
+	Variable concentrationICVar;
+	Variable concentrationsVar;
+	Variable waterVolumeConcentrationsVar;
+	Variable averageSoluteConcentrationVar;
+	Variable averageWaterVolumeSoluteConcentrationVar;
+	
+	//Variable soluteFluxesVar;
+	Variable dispersionSoluteFluxesVar;
+	Variable advectionSoluteFluxesVar;
+	Variable errorWaterVolumeConcentrationVar;
+	Variable errorVolumeVar;
+	Variable controlVolumeVar; 
 
 	ArrayDouble.D1 dataPsiIC;
-	ArrayDouble.D1 dataTemperature;
-	ArrayDouble.D1 dataError;
-	ArrayDouble.D1 dataTopBC;
-	ArrayDouble.D1 dataBottomBC;
-	ArrayDouble.D1 dataRunOff;
+	//ArrayDouble.D1 dataRootIC;
+	ArrayDouble.D1 dataConcentrationIC;
+	ArrayDouble.D1 dataErrorWaterVolumeConcentration;
+	ArrayDouble.D1 dataErrorVolume;
 	ArrayDouble.D1 dataControlVolume;
+	ArrayDouble.D1 dataAverageSoluteConcentration;
+	ArrayDouble.D1 dataAverageWaterVolumeSoluteConcentration;
 	
 	ArrayDouble.D2 dataPsi;
 	ArrayDouble.D2 dataTheta;
-	ArrayDouble.D2 dataDarcyVelocities;
-	ArrayDouble.D2 dataDarcyVelocitiesCapillary;
-	ArrayDouble.D2 dataDarcyVelocitiesGravity;
-	ArrayDouble.D2 dataPoreVelocities;
-	ArrayDouble.D2 dataCelerity;
-	ArrayDouble.D2 dataKinematicRatio;
-	ArrayDouble.D2 dataETs;
 	ArrayDouble.D2 dataWaterVolume;
+	ArrayDouble.D2 dataDarcyVelocities;
+	//ArrayDouble.D2 dataETs;
+	ArrayDouble.D2 dataConcentrations;
+	ArrayDouble.D2 dataWaterVolumeConcentrations;
+	//ArrayDouble.D2 dataSoluteFluxes;
+	ArrayDouble.D2 dataDispersionSoluteFluxes;
+	ArrayDouble.D2 dataAdvectionSoluteFluxes;
+	
+	
+	
 
 
 	int step = 0;
@@ -254,15 +272,21 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 				dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, fileNameToSave);
 				// add a general attribute describing the problem and containing other relevant information for the user
 				dataFile.addGroupAttribute(null, new Attribute("Description of the problem",briefDescritpion));
-				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition",topBC));
-				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition",bottomBC));
-				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition",pathTopBC));
-				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition",pathBottomBC));
+				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition for solute equation",topSoluteBC));
+				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition for solute equation",bottomSoluteBC));
+				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition for Richards equation",topRichardsBC));
+				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition for Richards equation",bottomRichardsBC));
+				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition for solute equation",pathSoluteTopBC));
+				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition for heat equation",pathSoluteBottomBC));
+				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition for Richards equation",pathRichardsTopBC));
+				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition for Richards equation",pathRichardsBottomBC));
 				dataFile.addGroupAttribute(null, new Attribute("path grid",pathGrid));			
 				dataFile.addGroupAttribute(null, new Attribute("time delta",timeDelta));
 				dataFile.addGroupAttribute(null, new Attribute("swrc model",swrcModel));
 				dataFile.addGroupAttribute(null, new Attribute("soil hydraulic conductivity model",soilHydraulicConductivityModel));
-				dataFile.addGroupAttribute(null, new Attribute("interface conductivity model",interfaceConductivityModel));
+				dataFile.addGroupAttribute(null, new Attribute("interface hydraulic conductivity model",interfaceHydraulicConductivityModel));
+				//dataFile.addGroupAttribute(null, new Attribute("soil thermal conductivity model",soilThermalConductivityModel));
+				dataFile.addGroupAttribute(null, new Attribute("interface dispersion coefficient model",interfaceDispersionCoefficientModel));
 
 				//add dimensions  where time dimension is unlimit
 				// the spatial dimension is defined using just the indexes 
@@ -285,88 +309,75 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 
 				dataFile.addVariableAttribute(dualDepthVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(dualDepthVar, new Attribute("long_name", "Dual soil depth."));
-
+				
 				// Define the netCDF variables and their attributes.
 				String dims = "time depth";
 				String dualDims = "time dualDepth";
 
-				psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
-				dataFile.addVariableAttribute(psiVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(psiVar, new Attribute("long_name", "Water suction."));
-				
 				psiICVar = dataFile.addVariable(null, "psiIC", DataType.DOUBLE, "depth");
 				dataFile.addVariableAttribute(psiICVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiICVar, new Attribute("long_name", "Initial condition for water suction."));
 				
-				temperatureVar = dataFile.addVariable(null, "T", DataType.DOUBLE, "depth");
-				dataFile.addVariableAttribute(temperatureVar, new Attribute("units", "K"));
-				dataFile.addVariableAttribute(temperatureVar, new Attribute("long_name", "Temperature."));
+				psiVar = dataFile.addVariable(null, "psi", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(psiVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(psiVar, new Attribute("long_name", "Water suction."));
 				
 				thetaVar = dataFile.addVariable(null, "theta", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(thetaVar, new Attribute("units", " "));
 				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "theta for within soil and water depth."));
 				
-				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocity", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("long_name", "Darcy velocity."));
-				}
-				
-				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					darcyVelocitiesCapillaryVar = dataFile.addVariable(null, "darcyVelocityCapillary", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(darcyVelocitiesCapillaryVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(darcyVelocitiesCapillaryVar, new Attribute("long_name", "Darcy velocity due to the gradient of capillary forces."));
-				}
-				
-				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					darcyVelocitiesGravityVar = dataFile.addVariable(null, "darcyVelocity_gravity", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(darcyVelocitiesGravityVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(darcyVelocitiesGravityVar, new Attribute("long_name", "Darcy velocities due to the gradient of gravity."));
-				}
-				
-				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					poreVelocitiesVar = dataFile.addVariable(null, "poreVelocity", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(poreVelocitiesVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(poreVelocitiesVar, new Attribute("long_name", "Pore velocities, ratio between the Darcy velocities and porosity."));
-				}
-				
-				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					celerityVar = dataFile.addVariable(null, "celerities", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(celerityVar, new Attribute("units", "m/s"));
-					dataFile.addVariableAttribute(celerityVar, new Attribute("long_name", "Celerity of the pressure wave (Rasmussen et al. 2000"));
-				}
-				
-				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					kinematicRatioVar  = dataFile.addVariable(null, "kinematicRatio", DataType.DOUBLE, dualDims);
-					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("units", "-"));
-					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("long_name", "Kinematic ratio (Rasmussen et al. 2000)"));
-				}
-
-				ETsVar  = dataFile.addVariable(null, "ets", DataType.DOUBLE, dims);
-				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water"));
-				
 				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("long_name", "Water volume in each control volume"));
 
+				darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocity", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("units", "m s-1"));
+				dataFile.addVariableAttribute(darcyVelocitiesVar, new Attribute("long_name", "Darcy flux."));
 				
-				errorVar = dataFile.addVariable(null, "error", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(errorVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(errorVar, new Attribute("long_name", "Volume error at each time step."));
+				//ETsVar  = dataFile.addVariable(null, "ets", DataType.DOUBLE, dims);
+				//dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
+				//dataFile.addVariableAttribute(ETsVar, new Attribute("long_name", "Transpired stressed water."));
 				
-				topBCVar  = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(topBCVar, new Attribute("units", "mm"));                   //?????
-				dataFile.addVariableAttribute(topBCVar, new Attribute("long_name", "Rainfall heights")); //?????
-				
-				bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(bottomBCVar, new Attribute("units", ""));                 //?????
-				dataFile.addVariableAttribute(bottomBCVar, new Attribute("long_name", "")); //?????
-								
-				runOffVar = dataFile.addVariable(null, "runOff", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(runOffVar, new Attribute("units", "m/s"));
-				dataFile.addVariableAttribute(runOffVar, new Attribute("long_name", "run off"));
+				concentrationICVar  = dataFile.addVariable(null, "concentrationIC", DataType.DOUBLE, "depth");
+				dataFile.addVariableAttribute(concentrationICVar, new Attribute("units", "ML-3"));
+				dataFile.addVariableAttribute(concentrationICVar, new Attribute("long_name", "Initial condition for solute concentration."));
 
+				concentrationsVar  = dataFile.addVariable(null, "concentrations", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(concentrationsVar, new Attribute("units", "ML-3"));
+				dataFile.addVariableAttribute(concentrationsVar, new Attribute("long_name", "Solute concentration in each control volume."));
+				
+				waterVolumeConcentrationsVar  = dataFile.addVariable(null, "waterVolumeConcentrations", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(waterVolumeConcentrationsVar, new Attribute("units", "ML-2"));
+				dataFile.addVariableAttribute(waterVolumeConcentrationsVar, new Attribute("long_name", "waterVolumeSolute concentration in each control volume."));
+				
+				averageSoluteConcentrationVar = dataFile.addVariable(null, "averageSoluteConcentration", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(averageSoluteConcentrationVar, new Attribute("units", "ML-3"));
+				dataFile.addVariableAttribute(averageSoluteConcentrationVar, new Attribute("long_name", "Average solute concentration."));
+				
+				averageWaterVolumeSoluteConcentrationVar = dataFile.addVariable(null, "averageWaterVolumeSoluteConcentration", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(averageWaterVolumeSoluteConcentrationVar, new Attribute("units", "ML-2"));
+				dataFile.addVariableAttribute(averageWaterVolumeSoluteConcentrationVar, new Attribute("long_name", "Average water volume solute concentration."));
+				
+				//soluteFluxesVar = dataFile.addVariable(null, "soluteFluxes", DataType.DOUBLE, dualDims);
+				//dataFile.addVariableAttribute(soluteFluxesVar, new Attribute("units", "")); //?????
+				//dataFile.addVariableAttribute(soluteFluxesVar, new Attribute("long_name", "Solute Flux."));
+				
+				dispersionSoluteFluxesVar = dataFile.addVariable(null, "dispersionSoluteFluxes", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(dispersionSoluteFluxesVar, new Attribute("units", ""));  //?????
+				dataFile.addVariableAttribute(dispersionSoluteFluxesVar, new Attribute("long_name", "Dispersion Flux."));
+				
+				advectionSoluteFluxesVar = dataFile.addVariable(null, "advectionSoluteFluxes", DataType.DOUBLE, dualDims);
+				dataFile.addVariableAttribute(advectionSoluteFluxesVar, new Attribute("units", ""));  //?????
+				dataFile.addVariableAttribute(advectionSoluteFluxesVar, new Attribute("long_name", "Advection Flux."));
+				
+				errorWaterVolumeConcentrationVar = dataFile.addVariable(null, "errorWaterVolumeConcentration", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(errorWaterVolumeConcentrationVar, new Attribute("units", "")); //?????
+				dataFile.addVariableAttribute(errorWaterVolumeConcentrationVar, new Attribute("long_name", "Water volume concentration error at each time step."));
+				
+				errorVolumeVar = dataFile.addVariable(null, "errorVolume", DataType.DOUBLE, "time");
+				dataFile.addVariableAttribute(errorVolumeVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(errorVolumeVar, new Attribute("long_name", "Volume error at each time step."));
+				
 				controlVolumeVar = dataFile.addVariable(null, "controlVolume", DataType.DOUBLE, "depth");
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(controlVolumeVar, new Attribute("long_name", "dimension of each control volumes"));
@@ -376,18 +387,16 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 				dualDepth = new ArrayDouble.D1(dualKDim.getLength());
 				dataControlVolume = new ArrayDouble.D1(kDim.getLength());
 				dataPsiIC = new ArrayDouble.D1(kDim.getLength());
-				dataTemperature = new ArrayDouble.D1(kDim.getLength());
+				dataConcentrationIC = new ArrayDouble.D1(kDim.getLength());
+				//dataRootIC = new ArrayDouble.D1(kDim.getLength());
 
 				for (int k = 0; k < kDim.getLength(); k++) {
 					depth.set(k, spatialCoordinate[k]);
 					dataControlVolume.set(k, controlVolume[k]);
-					dataPsiIC.set(k, psiIC[k]);
-					dataTemperature.set(k, temperature[k]);	
+					dataPsiIC.set(k, psi[k]);
+					dataConcentrationIC.set(k, concentrationIC[k]);	
 				}
 				
-				for (int k = 0; k < kDim.getLength()-1; k++) {
-					
-				}
 
 				for (int k = 0; k < dualKDim.getLength(); k++) {
 					dualDepth.set(k, dualSpatialCoordinate[k]);
@@ -399,7 +408,7 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 				dataFile.write(dualDepthVar, dualDepth);
 				dataFile.write(controlVolumeVar, dataControlVolume);
 				dataFile.write(psiICVar, dataPsiIC);
-				dataFile.write(temperatureVar, dataTemperature);
+				dataFile.write(concentrationICVar, dataConcentrationIC);
 				stepCreation = 1;
 
 				System.out.println("\n\t***Created NetCDF " + fileNameToSave +"\n\n");
@@ -434,40 +443,22 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 
 				times = Array.factory(DataType.INT, new int[] {NREC});
 
-				dataPsi = new ArrayDouble.D2(NREC, KMAX);
-				dataTheta = new ArrayDouble.D2(NREC, KMAX);
-				dataETs = new ArrayDouble.D2(NREC, KMAX);
-				dataWaterVolume = new ArrayDouble.D2(NREC, KMAX);
-				dataError = new ArrayDouble.D1(NREC);
-				dataTopBC = new ArrayDouble.D1(NREC);
-				dataBottomBC = new ArrayDouble.D1(NREC);
-				dataRunOff = new ArrayDouble.D1(NREC);
-
-
-				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					dataDarcyVelocities = new ArrayDouble.D2(NREC, KMAX);
-				}
+				dataPsi 	= new ArrayDouble.D2(NREC, KMAX);
+				dataTheta 	= new ArrayDouble.D2(NREC, KMAX);
+				//dataETs 	= new ArrayDouble.D2(NREC, KMAX);
+				dataWaterVolume 		= new ArrayDouble.D2(NREC, KMAX);
+				dataDarcyVelocities 	= new ArrayDouble.D2(NREC, DUALKMAX);
+				dataConcentrations 		= new ArrayDouble.D2(NREC, KMAX);
+				dataWaterVolumeConcentrations 	= new ArrayDouble.D2(NREC, KMAX);
+				//dataSoluteFluxes 				= new ArrayDouble.D2(NREC, DUALKMAX);
+				dataDispersionSoluteFluxes 		= new ArrayDouble.D2(NREC, DUALKMAX);
+				dataAdvectionSoluteFluxes 		= new ArrayDouble.D2(NREC, DUALKMAX);
 				
-				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					dataDarcyVelocitiesCapillary = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					dataDarcyVelocitiesGravity = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					dataPoreVelocities = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					dataCelerity = new ArrayDouble.D2(NREC, KMAX);
-				}
-				
-				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					dataKinematicRatio = new ArrayDouble.D2(NREC, KMAX);
-				}		
-				
+				dataErrorVolume = new ArrayDouble.D1(NREC);
+				dataErrorWaterVolumeConcentration = new ArrayDouble.D1(NREC);
+				dataAverageSoluteConcentration = new ArrayDouble.D1(NREC);
+				dataAverageWaterVolumeSoluteConcentration = new ArrayDouble.D1(NREC);
+			
 
 				
 				int i=0;
@@ -486,7 +477,6 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 
 					times.setLong(i, (long) date.getTime()/(60*1000));
 
-
 					tempVariable =  entry.getValue().get(0);
 					for (int k = 0; k < KMAX; k++) {
 
@@ -494,14 +484,14 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 
 					}
 
-
 					tempVariable =  entry.getValue().get(1);
 					for (int k = 0; k < KMAX; k++) {
 
 						dataTheta.set(i, k, tempVariable[k]);
 
 					}
-					
+
+
 					tempVariable =  entry.getValue().get(2);
 					for (int k = 0; k < KMAX; k++) {
 
@@ -509,74 +499,66 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 
 					}
 					
-					if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(3);
-						for (int k = 0; k < DUALKMAX; k++) {
+					tempVariable =  entry.getValue().get(3);
+					for (int k = 0; k < DUALKMAX; k++) {
 
-							dataDarcyVelocities.set(i, k, tempVariable[k]);
+						dataDarcyVelocities.set(i, k, tempVariable[k]);
 
-						}
 					}
 					
-					if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(4);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataDarcyVelocitiesCapillary.set(i, k, tempVariable[k]);
-
-						}
-					}
-
-					if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(5);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataDarcyVelocitiesGravity.set(i, k, tempVariable[k]);
-
-						}
-					}
-
-					if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(6);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataPoreVelocities.set(i,k, tempVariable[k]);
-
-						}
-					}
-
-					if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(7);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataCelerity.set(i,k, tempVariable[k]);
-
-						}
-					}
 					
-					if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-						tempVariable =  entry.getValue().get(8);
-						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataKinematicRatio.set(i,k, tempVariable[k]);
-
-						}
-					}
-					
-					tempVariable =  entry.getValue().get(9);
+					/*tempVariable =  entry.getValue().get(4);
 					for (int k = 0; k < KMAX; k++) {
 
-						dataETs.set(i,k, tempVariable[k]);
+						dataETs.set(i, k, tempVariable[k]);
+
+					}*/
+					
+					tempVariable =  entry.getValue().get(4);
+					for (int k = 0; k < KMAX; k++) {
+
+						dataConcentrations.set(i, k, tempVariable[k]);
 
 					}
+					
+					tempVariable =  entry.getValue().get(5);
+					for (int k = 0; k < KMAX; k++) {
 
-					dataError.set(i, entry.getValue().get(10)[0]);
+						dataWaterVolumeConcentrations.set(i, k, tempVariable[k]);
 
-					dataTopBC.set(i, entry.getValue().get(11)[0]);
+					}
+					
+					/*tempVariable =  entry.getValue().get(7);
+					for (int k = 0; k < DUALKMAX; k++) {
 
-					dataBottomBC.set(i, entry.getValue().get(12)[0]);
+						dataSoluteFluxes.set(i, k, tempVariable[k]);
 
-					dataRunOff.set(i, entry.getValue().get(13)[0]);
+					}*/
+					
+					tempVariable =  entry.getValue().get(6);
+					for (int k = 0; k < DUALKMAX; k++) {
+
+						dataDispersionSoluteFluxes.set(i, k, tempVariable[k]);
+
+					}
+					
+					tempVariable =  entry.getValue().get(7);
+					for (int k = 0; k < DUALKMAX; k++) {
+
+						dataAdvectionSoluteFluxes.set(i, k, tempVariable[k]);
+
+					}
+					
+					
+					dataErrorWaterVolumeConcentration.set(i, entry.getValue().get(8)[0]);
+
+					dataErrorVolume.set(i, entry.getValue().get(9)[0]);
+					
+					dataAverageSoluteConcentration.set(i, entry.getValue().get(10)[0]);
+					
+					dataAverageWaterVolumeSoluteConcentration.set(i, entry.getValue().get(11)[0]);
+
+
 
 					i++;
 				}				
@@ -594,37 +576,20 @@ public class WriteNetCDFRichardsLysimeter1DDouble {
 				dataFile.write(dataFile.findVariable("psi"), origin, dataPsi);
 				dataFile.write(dataFile.findVariable("theta"), origin, dataTheta);
 				dataFile.write(dataFile.findVariable("waterVolume"), origin, dataWaterVolume);
+				dataFile.write(dataFile.findVariable("darcyVelocity"), origin, dataDarcyVelocities);		
+				//dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
 				
-				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocity"), origin, dataDarcyVelocities);
-				}
+				dataFile.write(dataFile.findVariable("concentrations"), origin, dataConcentrations);
+				dataFile.write(dataFile.findVariable("waterVolumeConcentrations"), origin, dataWaterVolumeConcentrations);
+				//dataFile.write(dataFile.findVariable("soluteFluxes"), origin, dataSoluteFluxes);
+				dataFile.write(dataFile.findVariable("dispersionSoluteFluxes"), origin, dataDispersionSoluteFluxes);
+				dataFile.write(dataFile.findVariable("advectionSoluteFluxes"), origin, dataAdvectionSoluteFluxes);
 				
-				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocityCapillary"), origin, dataDarcyVelocitiesCapillary);
-				}
-				
-				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocityGravity"), origin, dataDarcyVelocitiesGravity);
-				}
-				
-				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("poreVelocity"), origin, dataPoreVelocities);
-				}
-				
-				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("celerity"), origin, dataCelerity);
-				}
-				
-				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("kinematicRatio"), origin, dataKinematicRatio);
-				}
-				
-				dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
-				
-				dataFile.write(dataFile.findVariable("error"), time_origin, dataError);
-				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
-				dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);
-				dataFile.write(dataFile.findVariable("runOff"), time_origin, dataRunOff);
+
+				dataFile.write(dataFile.findVariable("errorWaterVolumeConcentration"), time_origin, dataErrorWaterVolumeConcentration);
+				dataFile.write(dataFile.findVariable("errorVolume"), time_origin, dataErrorVolume);
+				dataFile.write(dataFile.findVariable("averageSoluteConcentration"), time_origin, dataAverageSoluteConcentration);
+				dataFile.write(dataFile.findVariable("averageWaterVolumeSoluteConcentration"), time_origin, dataAverageWaterVolumeSoluteConcentration);
 
 				origin_counter = origin_counter + NREC;
 				

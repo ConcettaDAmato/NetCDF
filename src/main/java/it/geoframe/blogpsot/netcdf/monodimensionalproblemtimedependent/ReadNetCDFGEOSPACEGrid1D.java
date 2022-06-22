@@ -44,7 +44,7 @@ import ucar.nc2.Variable;
 // @Status(Status.CERTIFIED)
 @License("General Public License Version 3 (GPLv3)")
 
-public class ReadNetCDFRichardsLysimeterGrid1D {
+public class ReadNetCDFGEOSPACEGrid1D {
 
 	@Description("File name of NetCDF containing grid data")
 	@In
