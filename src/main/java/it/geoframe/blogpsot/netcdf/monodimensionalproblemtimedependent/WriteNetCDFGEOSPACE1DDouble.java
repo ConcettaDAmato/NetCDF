@@ -121,13 +121,13 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	@Unit ()
 	public String briefDescritpion;
 	@In
-	public String topBC = " ";
+	public String topRichardsBC = " ";
 	@In
-	public String bottomBC = " ";
+	public String bottomRichardsBC = " ";
 	@In
-	public String pathTopBC = " ";
+	public String pathRichardsTopBC = " ";
 	@In
-	public String pathBottomBC = " ";
+	public String pathRichardsBottomBC = " ";
 	@In
 	public String pathGrid = " ";
 	@In
@@ -186,8 +186,8 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	Variable dualDepthVar;
 	Variable psiVar;
 	Variable psiICVar;
-	Variable rootICVar;
-	Variable temperatureVar;
+	Variable rootDensityICVar;
+	Variable temperatureICVar;
 	Variable thetaVar;
 	Variable darcyVelocitiesVar;
 	Variable darcyVelocitiesCapillaryVar;
@@ -208,10 +208,13 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	Variable stressSunVar;
 	Variable stressShadeVar;
 	Variable stressedETsVar;
+	Variable rootDensityVar;
+	Variable stressedTsVar;
+	Variable stressedEsVar;
 
 	ArrayDouble.D1 dataPsiIC;
-	ArrayDouble.D1 dataTemperature;
-	ArrayDouble.D1 dataRootIC;
+	ArrayDouble.D1 dataTemperatureIC;
+	ArrayDouble.D1 dataRootDensityIC;
 	ArrayDouble.D1 dataError;
 	ArrayDouble.D1 dataTopBC;
 	ArrayDouble.D1 dataBottomBC;
@@ -233,7 +236,10 @@ public class WriteNetCDFGEOSPACE1DDouble {
 	ArrayDouble.D2 dataETs;
 	ArrayDouble.D2 dataWaterVolume;
 	ArrayDouble.D2 dataStressWaters; //stress water for each control volume 
-	ArrayDouble.D2 dataStressedETs; 
+	ArrayDouble.D2 dataStressedETs;
+	ArrayDouble.D2 dataRootDensity;
+	ArrayDouble.D2 dataStressedTs;
+	ArrayDouble.D2 dataStressedEs;
 
 	
 	int step = 0;
@@ -273,10 +279,10 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, fileNameToSave);
 				// add a general attribute describing the problem and containing other relevant information for the user
 				dataFile.addGroupAttribute(null, new Attribute("Description of the problem",briefDescritpion));
-				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition",topBC));
-				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition",bottomBC));
-				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition",pathTopBC));
-				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition",pathBottomBC));
+				dataFile.addGroupAttribute(null, new Attribute("Top boundary condition",topRichardsBC));
+				dataFile.addGroupAttribute(null, new Attribute("Bottom boundary condition",bottomRichardsBC));
+				dataFile.addGroupAttribute(null, new Attribute("path top boundary condition",pathRichardsTopBC));
+				dataFile.addGroupAttribute(null, new Attribute("path bottom boundary condition",pathRichardsBottomBC));
 				dataFile.addGroupAttribute(null, new Attribute("path grid",pathGrid));			
 				dataFile.addGroupAttribute(null, new Attribute("time delta",timeDelta));
 				dataFile.addGroupAttribute(null, new Attribute("swrc model",swrcModel));
@@ -317,18 +323,21 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataFile.addVariableAttribute(psiICVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(psiICVar, new Attribute("long_name", "Initial condition for water suction."));
 				
-				rootICVar = dataFile.addVariable(null, "rootIC", DataType.DOUBLE, "depth");
-				dataFile.addVariableAttribute(rootICVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(rootICVar, new Attribute("long_name", "Initial condition for root depth."));
+				rootDensityICVar = dataFile.addVariable(null, "rootDensityIC", DataType.DOUBLE, "depth");
+				dataFile.addVariableAttribute(rootDensityICVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(rootDensityICVar, new Attribute("long_name", "Initial condition for root depth."));
 
-				
-				temperatureVar = dataFile.addVariable(null, "T", DataType.DOUBLE, "depth");
-				dataFile.addVariableAttribute(temperatureVar, new Attribute("units", "K"));
-				dataFile.addVariableAttribute(temperatureVar, new Attribute("long_name", "Temperature."));
+				temperatureICVar = dataFile.addVariable(null, "Temperature", DataType.DOUBLE, "depth");
+				dataFile.addVariableAttribute(temperatureICVar, new Attribute("units", "K"));
+				dataFile.addVariableAttribute(temperatureICVar, new Attribute("long_name", "Temperature."));
 				
 				thetaVar = dataFile.addVariable(null, "theta", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(thetaVar, new Attribute("units", " "));
 				dataFile.addVariableAttribute(thetaVar, new Attribute("long_name", "theta for within soil and water depth."));
+				
+				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
+				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("long_name", "Water volume in each control volume"));
 				
 				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
 					darcyVelocitiesVar = dataFile.addVariable(null, "darcyVelocity", DataType.DOUBLE, dualDims);
@@ -365,6 +374,17 @@ public class WriteNetCDFGEOSPACE1DDouble {
 					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("units", "-"));
 					dataFile.addVariableAttribute(kinematicRatioVar, new Attribute("long_name", "Kinematic ratio (Rasmussen et al. 2000)"));
 				}
+				
+				if (outVariablesList.contains("boundaryConditions") || outVariablesList.contains("all")) {
+					
+					topBCVar  = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
+					dataFile.addVariableAttribute(topBCVar, new Attribute("units", "mm"));                  
+					dataFile.addVariableAttribute(topBCVar, new Attribute("long_name", "Rainfall heights")); 
+					
+					bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
+					dataFile.addVariableAttribute(bottomBCVar, new Attribute("units", ""));                
+					dataFile.addVariableAttribute(bottomBCVar, new Attribute("long_name", "bottomBC")); 
+				}
 
 				ETsVar  = dataFile.addVariable(null, "ets", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(ETsVar, new Attribute("units", "m"));
@@ -372,7 +392,7 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				
 				stressWatersVar  = dataFile.addVariable(null, "StressWaters", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(stressWatersVar, new Attribute("units", "-"));
-				dataFile.addVariableAttribute(stressWatersVar, new Attribute("long_name", "water stress in each control volume"));
+				dataFile.addVariableAttribute(stressWatersVar, new Attribute("long_name", "Water stress in each control volume"));
 				
 				stressWaterVar  = dataFile.addVariable(null, "StressWater", DataType.DOUBLE, "time");
 				dataFile.addVariableAttribute(stressWaterVar, new Attribute("units", "-"));
@@ -392,26 +412,23 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				
 				stressedETsVar  = dataFile.addVariable(null, "StressedETs", DataType.DOUBLE, dims);
 				dataFile.addVariableAttribute(stressedETsVar, new Attribute("units", "mm"));
-				dataFile.addVariableAttribute(stressedETsVar, new Attribute("long_name", "Transpired stressed water from BrokerGEO"));
+				dataFile.addVariableAttribute(stressedETsVar, new Attribute("long_name", "EvapoTranspired stressed water from BrokerGEO"));
 				
+				stressedTsVar  = dataFile.addVariable(null, "StressedTs", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(stressedTsVar, new Attribute("units", "mm"));
+				dataFile.addVariableAttribute(stressedTsVar, new Attribute("long_name", "Transpired stressed water from BrokerGEO"));
 				
+				stressedEsVar  = dataFile.addVariable(null, "StressedEs", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(stressedEsVar, new Attribute("units", "mm"));
+				dataFile.addVariableAttribute(stressedEsVar, new Attribute("long_name", "Evaporated stressed water from BrokerGEO"));
 				
-				waterVolumeVar  = dataFile.addVariable(null, "waterVolume", DataType.DOUBLE, dims);
-				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("units", "m"));
-				dataFile.addVariableAttribute(waterVolumeVar, new Attribute("long_name", "Water volume in each control volume"));
-
+				rootDensityVar  = dataFile.addVariable(null, "RootDensity", DataType.DOUBLE, dims);
+				dataFile.addVariableAttribute(rootDensityVar, new Attribute("units", "-"));
+				dataFile.addVariableAttribute(rootDensityVar, new Attribute("long_name", "Root density in each control volume"));
 				
-				errorVar = dataFile.addVariable(null, "error", DataType.DOUBLE, "time");
+				errorVar = dataFile.addVariable(null, "errorWaterVolume", DataType.DOUBLE, "time");
 				dataFile.addVariableAttribute(errorVar, new Attribute("units", "m"));
 				dataFile.addVariableAttribute(errorVar, new Attribute("long_name", "Volume error at each time step."));
-				
-				topBCVar  = dataFile.addVariable(null, "topBC", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(topBCVar, new Attribute("units", "mm"));                   //?????
-				dataFile.addVariableAttribute(topBCVar, new Attribute("long_name", "Rainfall heights")); //?????
-				
-				bottomBCVar = dataFile.addVariable(null, "bottomBC", DataType.DOUBLE, "time");
-				dataFile.addVariableAttribute(bottomBCVar, new Attribute("units", ""));                 //?????
-				dataFile.addVariableAttribute(bottomBCVar, new Attribute("long_name", "")); //?????
 								
 				runOffVar = dataFile.addVariable(null, "runOff", DataType.DOUBLE, "time");
 				dataFile.addVariableAttribute(runOffVar, new Attribute("units", "m/s"));
@@ -426,20 +443,19 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dualDepth = new ArrayDouble.D1(dualKDim.getLength());
 				dataControlVolume = new ArrayDouble.D1(kDim.getLength());
 				dataPsiIC = new ArrayDouble.D1(kDim.getLength());
-				dataTemperature = new ArrayDouble.D1(kDim.getLength());
-				dataRootIC = new ArrayDouble.D1(kDim.getLength());  // queste sono quelle che non cambiano nel tempo
+				dataTemperatureIC = new ArrayDouble.D1(kDim.getLength());
+				dataRootDensityIC = new ArrayDouble.D1(kDim.getLength());  // queste sono quelle che non cambiano nel tempo
 
 				for (int k = 0; k < kDim.getLength(); k++) {
 					depth.set(k, spatialCoordinate[k]);
 					dataControlVolume.set(k, controlVolume[k]);
 					dataPsiIC.set(k, psiIC[k]);
-					dataTemperature.set(k, temperature[k]);
-					dataRootIC.set(k, rootIC[k]);
+					dataTemperatureIC.set(k, temperature[k]);
+					dataRootDensityIC.set(k, rootIC[k]);
 				}
 				
-				for (int k = 0; k < kDim.getLength()-1; k++) {
-					
-				}
+				//for (int k = 0; k < kDim.getLength()-1; k++) {
+				//}
 
 				for (int k = 0; k < dualKDim.getLength(); k++) {
 					dualDepth.set(k, dualSpatialCoordinate[k]);
@@ -451,8 +467,8 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataFile.write(dualDepthVar, dualDepth);
 				dataFile.write(controlVolumeVar, dataControlVolume);
 				dataFile.write(psiICVar, dataPsiIC);
-				dataFile.write(rootICVar, dataRootIC);
-				dataFile.write(temperatureVar, dataTemperature);
+				dataFile.write(rootDensityICVar, dataRootDensityIC);
+				dataFile.write(temperatureICVar, dataTemperatureIC);
 				stepCreation = 1;
 
 				System.out.println("\n\t***Created NetCDF " + fileNameToSave +"\n\n");
@@ -492,8 +508,7 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataETs = new ArrayDouble.D2(NREC, KMAX);
 				dataWaterVolume = new ArrayDouble.D2(NREC, KMAX);
 				dataError = new ArrayDouble.D1(NREC); // aggiungere le mie variabili a vettori 
-				dataTopBC = new ArrayDouble.D1(NREC);
-				dataBottomBC = new ArrayDouble.D1(NREC);
+				
 				dataRunOff = new ArrayDouble.D1(NREC);
 				
 				dataStressWaters = new ArrayDouble.D2(NREC, KMAX); 
@@ -503,6 +518,10 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataEvaporationStressWater = new ArrayDouble.D1(NREC);
 				dataStressSun = new ArrayDouble.D1(NREC);
 				dataStressShade = new ArrayDouble.D1(NREC);
+				
+				dataStressedTs = new ArrayDouble.D2(NREC, KMAX);
+				dataStressedEs = new ArrayDouble.D2(NREC, KMAX);
+				dataRootDensity = new ArrayDouble.D2(NREC, KMAX);
 				
 
 
@@ -529,7 +548,12 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				
 				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
 					dataKinematicRatio = new ArrayDouble.D2(NREC, KMAX);
-				}		
+				}	
+				
+				if (outVariablesList.contains("boundaryConditions") || outVariablesList.contains("all")) {
+					dataTopBC = new ArrayDouble.D1(NREC);
+					dataBottomBC = new ArrayDouble.D1(NREC);
+				}
 				
 
 				
@@ -552,116 +576,91 @@ public class WriteNetCDFGEOSPACE1DDouble {
 
 					tempVariable =  entry.getValue().get(0);
 					for (int k = 0; k < KMAX; k++) {
-
-						dataPsi.set(i, k, tempVariable[k]);
-
-					}
+						dataPsi.set(i, k, tempVariable[k]);}
 
 
 					tempVariable =  entry.getValue().get(1);
 					for (int k = 0; k < KMAX; k++) {
-
-						dataTheta.set(i, k, tempVariable[k]);
-
-					}
+						dataTheta.set(i, k, tempVariable[k]);}
 					
 					tempVariable =  entry.getValue().get(2);
 					for (int k = 0; k < KMAX; k++) {
-
-						dataWaterVolume.set(i, k, tempVariable[k]);
-
-					}
+						dataWaterVolume.set(i, k, tempVariable[k]);}
+					
+					
+					
 					
 					if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
 						tempVariable =  entry.getValue().get(3);
 						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataDarcyVelocities.set(i, k, tempVariable[k]);
-
-						}
-					}
+							dataDarcyVelocities.set(i, k, tempVariable[k]);}}
 					
 					if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
 						tempVariable =  entry.getValue().get(4);
 						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataDarcyVelocitiesCapillary.set(i, k, tempVariable[k]);
-
-						}
-					}
+							dataDarcyVelocitiesCapillary.set(i, k, tempVariable[k]);}}
 
 					if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
 						tempVariable =  entry.getValue().get(5);
 						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataDarcyVelocitiesGravity.set(i, k, tempVariable[k]);
-
-						}
-					}
+							dataDarcyVelocitiesGravity.set(i, k, tempVariable[k]);}}
 
 					if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
 						tempVariable =  entry.getValue().get(6);
 						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataPoreVelocities.set(i,k, tempVariable[k]);
-
-						}
-					}
+							dataPoreVelocities.set(i,k, tempVariable[k]);}}
 
 					if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
 						tempVariable =  entry.getValue().get(7);
 						for (int k = 0; k < DUALKMAX; k++) {
-
-							dataCelerity.set(i,k, tempVariable[k]);
-
-						}
-					}
+							dataCelerity.set(i,k, tempVariable[k]);}}
 					
 					if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
 						tempVariable =  entry.getValue().get(8);
 						for (int k = 0; k < DUALKMAX; k++) {
+							dataKinematicRatio.set(i,k, tempVariable[k]);}}
 
-							dataKinematicRatio.set(i,k, tempVariable[k]);
-
-						}
-					}
+					if (outVariablesList.contains("boundaryConditions") || outVariablesList.contains("all")) {
+						dataTopBC.set(i, entry.getValue().get(11)[0]);
+						dataBottomBC.set(i, entry.getValue().get(12)[0]);}
+					
+					
 					
 					tempVariable =  entry.getValue().get(9);
 					for (int k = 0; k < KMAX; k++) {
-
-						dataETs.set(i,k, tempVariable[k]);
-
-					}
+						dataETs.set(i,k, tempVariable[k]);}
 
 					dataError.set(i, entry.getValue().get(10)[0]);
 
-					dataTopBC.set(i, entry.getValue().get(11)[0]);
-
-					dataBottomBC.set(i, entry.getValue().get(12)[0]);
-
 					dataRunOff.set(i, entry.getValue().get(13)[0]);
-					
 					
 					tempVariable =  entry.getValue().get(14);
 					for (int k = 0; k < KMAX-1; k++) {
-
 						dataStressWaters.set(i, k, tempVariable[k]);}
 					
 					dataStressWater.set(i, entry.getValue().get(15)[0]);
+					
 					dataEvaporationStressWater.set(i, entry.getValue().get(16)[0]);
+					
 					dataStressSun.set(i, entry.getValue().get(17)[0]);
+					
 					dataStressShade.set(i, entry.getValue().get(18)[0]);
 					
 					tempVariable =  entry.getValue().get(19);
 					for (int k = 0; k < KMAX-1; k++) {
-
 						dataStressedETs.set(i, k, tempVariable[k]);}
 					
-				
+					tempVariable =  entry.getValue().get(20);
+					for (int k = 0; k < KMAX-1; k++) {
+						dataRootDensity.set(i, k, tempVariable[k]);}
 					
+					tempVariable =  entry.getValue().get(21);
+					for (int k = 0; k < KMAX-1; k++) {
+						dataStressedTs.set(i, k, tempVariable[k]);}
 					
-					
-				
+					tempVariable =  entry.getValue().get(22);
+					for (int k = 0; k < KMAX-1; k++) {
+						dataStressedEs.set(i, k, tempVariable[k]);}
 
 					i++;
 				}				
@@ -681,28 +680,27 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataFile.write(dataFile.findVariable("waterVolume"), origin, dataWaterVolume);
 				
 				if (outVariablesList.contains("darcyVelocity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocity"), origin, dataDarcyVelocities);
-				}
+					dataFile.write(dataFile.findVariable("darcyVelocity"), origin, dataDarcyVelocities);}
 				
 				if (outVariablesList.contains("darcyVelocityCapillary") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocityCapillary"), origin, dataDarcyVelocitiesCapillary);
-				}
+					dataFile.write(dataFile.findVariable("darcyVelocityCapillary"), origin, dataDarcyVelocitiesCapillary);}
 				
 				if (outVariablesList.contains("darcyVelocityGravity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("darcyVelocityGravity"), origin, dataDarcyVelocitiesGravity);
-				}
+					dataFile.write(dataFile.findVariable("darcyVelocityGravity"), origin, dataDarcyVelocitiesGravity);}
 				
 				if (outVariablesList.contains("poreVelocity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("poreVelocity"), origin, dataPoreVelocities);
-				}
+					dataFile.write(dataFile.findVariable("poreVelocity"), origin, dataPoreVelocities);}
 				
 				if (outVariablesList.contains("celerity") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("celerity"), origin, dataCelerity);
-				}
+					dataFile.write(dataFile.findVariable("celerity"), origin, dataCelerity);}
 				
 				if (outVariablesList.contains("kinematicRatio") || outVariablesList.contains("all")) {
-					dataFile.write(dataFile.findVariable("kinematicRatio"), origin, dataKinematicRatio);
-				}
+					dataFile.write(dataFile.findVariable("kinematicRatio"), origin, dataKinematicRatio);}
+				
+				if (outVariablesList.contains("boundaryConditions") || outVariablesList.contains("all")) {
+					dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
+					dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);}
+				
 				
 				dataFile.write(dataFile.findVariable("ets"), origin, dataETs);
 				
@@ -713,10 +711,12 @@ public class WriteNetCDFGEOSPACE1DDouble {
 				dataFile.write(dataFile.findVariable("EvaporationStressWater"), time_origin, dataEvaporationStressWater);
 				dataFile.write(dataFile.findVariable("StressSun"), time_origin, dataStressSun);
 				dataFile.write(dataFile.findVariable("StressShade"), time_origin, dataStressShade);
+				
+				dataFile.write(dataFile.findVariable("StressedTs"), origin, dataStressedTs);
+				dataFile.write(dataFile.findVariable("StressedEs"), origin, dataStressedEs);
+				dataFile.write(dataFile.findVariable("RootDensity"), origin, dataRootDensity);
 
-				dataFile.write(dataFile.findVariable("error"), time_origin, dataError);
-				dataFile.write(dataFile.findVariable("topBC"), time_origin, dataTopBC);
-				dataFile.write(dataFile.findVariable("bottomBC"), time_origin, dataBottomBC);
+				dataFile.write(dataFile.findVariable("errorWaterVolume"), time_origin, dataError);
 				dataFile.write(dataFile.findVariable("runOff"), time_origin, dataRunOff);
 
 				origin_counter = origin_counter + NREC;
