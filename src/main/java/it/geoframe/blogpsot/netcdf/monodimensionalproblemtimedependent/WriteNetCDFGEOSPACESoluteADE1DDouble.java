@@ -902,7 +902,7 @@ public class WriteNetCDFGEOSPACESoluteADE1DDouble {
 				}
 					
 				if(!variables.isEmpty()) {
-					System.out.println("\t\t*** " + variables.keySet().toArray()[i-1].toString() +", writing output file: " + fileNameToSave + "\n");
+					System.out.println("\n\n\t\t*** " + variables.keySet().toArray()[i-1].toString() +", writing output file: " + fileNameToSave + "\n");
 				}
 
 
